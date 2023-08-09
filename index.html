@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <title>FHS Simulator</title>
+        <meta name="description" content="ハイスピ設定のシミュレーションサイト">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+        <script src="main.js"></script>
+    </head>
+
+    <body>
+        <!-- <script type="module" src="acquisitions.js"></script> -->
+        <canvas id="bpm"></canvas>
+        <script>
+            // ここから関数定義，あとでモジュール化 //
+
+            function dataFormating(data) {
+                // データ整形（[[変化する小節番号, bpm], ...]　→　[[小節番号, bpm]] )
+                return [150, 150, 150, 150, 150, 75, 75, 75]
+            }
+
+            function getLineConfig(dataname, data, ymax) {
+                return {
+                    type: "line", 
+                    data: {
+                        labels: ["0", "10", "20", "30", "40", "50", "60", "70"], 
+                        datasets: [{
+                            label: "bpm", 
+                            data: data, 
+                            borderColor: "#f88",
+                            fill: false,
+                            tension: 0
+                        }],
+                    },
+                    options: {
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    min: 0,
+                                    max: ymax,
+                                    stepSize: 50
+                                }
+                            }]
+                        }
+                    },
+                }
+            }
+            // ここまで関数定義
+
+            var dataHSChange = [[0, 150], [50, 75]];
+            //ここ↑で入力値を取得する
+            var dataHS = dataFormating(dataHSChange);
+            var ctx = document.getElementById("bpm");
+            var ymax = Math.max(...dataHS) + 10;
+            let configHS = getLineConfig("bpm", dataHS, ymax);
+            let lineChart = new Chart(ctx, configHS)
+        </script>
+    </body>
+</html>
