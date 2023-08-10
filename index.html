@@ -5,35 +5,120 @@
         <title>FHS Simulator</title>
         <meta name="description" content="ハイスピ設定のシミュレーションサイト">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <link href="main.css" rel="stylesheet" type="text/css" media="all">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/TableDnD/0.9.1/jquery.tablednd.js" integrity="sha256-d3rtug+Hg1GZPB7Y/yTcRixO/wlI78+2m08tosoRn7A=" crossorigin="anonymous"></script>
         <script src="main.js"></script>
     </head>
 
     <body>
-        <!-- <script type="module" src="acquisitions.js"></script> -->
+        <table class="table tablesorter-bootstrap table-management" id="tableBPM" onchange="inputChange()">
+            <thead>
+                <tr class="nodrop nodrag">
+                    <th style="width: 5%;"></th>
+                    <th style="width: 25;">小節数</th>
+                    <th style="width: 40%;">拍数</th>
+                    <th style="width: 25%;">BPM</th>
+                    <th style="width: 5%;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <!-- 三本線の画像 -->
+                    <td class="handle"><img src="img/drugBottun.png"></td>
+                    <!-- 小節番号 -->
+                    <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="bpmInfos"></td>
+                    <!-- 音符の種類と拍数 -->
+                    <td name="beatInfo">
+                        <select name="notesType">
+                            <option value="4" selected>四分音符</option>
+                            <option value="8">八分音符</option>
+                            <option value="16">十六分音符</option>
+                            <option value="12">四分三連符</option>
+                            <option value="24">八分三連符</option>
+                        </select>
+                        で
+                        <input type="number" value=1 placeholder="拍数" name="beatNum" class="bpmInfos">
+                        拍目
+                    </td>
+                    <td name="BPMInfo"><input type="number" value=150 placeholder="BPM" name="BPM" class="bpmInfos"></td>
+                    <!-- マイナスボタンの画像 -->
+                    <td class="MinusBtn"><img src="img/rawMinus.png"></td>
+                </tr>
+            </tbody>
+        </table>
+        <img class="PlusBtn" src="img/rawPlus.png">
+
         <canvas id="bpm"></canvas>
-        <script>
+
+        <script defer>
             // ここから関数定義，あとでモジュール化 //
 
-            function dataFormating(data) {
-                // データ整形（[[変化する小節番号, bpm], ...]　→　[[小節番号, bpm]] )
-                return [150, 150, 150, 150, 150, 75, 75, 75]
+            function getHSData() {
+                return [{x: 0, y: 150}, {x: 50, y: 75}, {x: 70, y: 75}]
             }
 
-            function getLineConfig(dataname, data, ymax) {
+            function updateGraph(chart, dataUpdated) {
+                chart.update(dataUpdated) //TODO
+            }
+
+            function getBPMdataset() {
+                arrBPM = [];
+                let table = document.getElementById('tableBPM');
+                for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header
+                    row = table.rows[rowNum]
+                    if(rowNum == 1) {
+                        row.cells["barInfo"].children["barNum"].value = 1;
+                        row.cells["beatInfo"].children["notesType"].value = 4;
+                        row.cells["beatInfo"].children["beatNum"].value = 1;
+                    }
+                    barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
+                    notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
+                    beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
+                    bpm = parseInt(row.cells["BPMInfo"].children["BPM"].value)
+                    if(barNum && notesType && beatNum) {
+                        arrBPM.push({x: barNum+1/notesType*(beatNum-1), y: bpm})
+                    }
+                }
+                // endの小節線情報も入れる
+                arrBPM.push({x: 100, y: bpm});
+                console.log(arrBPM)
+                return arrBPM;
+            }
+
+            function inputChange(){
+                if (bpmChart) {
+                    bpmChart.destroy();
+                }
+                dataBPMChange = getBPMdataset();
+                drawChart(dataBPMChange);
+            }
+
+            function getLineConfig(dataname, formatedData, ymax, barmax) {
                 return {
                     type: "line", 
                     data: {
-                        labels: ["0", "10", "20", "30", "40", "50", "60", "70"], 
+                        // labels: ["0", "10", "20", "30", "40", "50", "60", "70"],     
                         datasets: [{
                             label: "bpm", 
-                            data: data, 
+                            data: formatedData, 
                             borderColor: "#f88",
                             fill: false,
-                            tension: 0
+                            steppedLine: true,
+                            // tension: 0,
+                            spanGaps: true,
                         }],
                     },
+                    spanGaps: true,
                     options: {
+                        // responsive: true,
+                        // interaction: {
+                        //     intersect: false,
+                        //     axis: 'x'
+                        // },
                         scales: {
                             yAxes: [{
                                 ticks: {
@@ -41,20 +126,84 @@
                                     max: ymax,
                                     stepSize: 50
                                 }
-                            }]
+                            }],
+                            xAxes: [{
+                                type: "linear",
+                                ticks: {
+                                    min: 1,
+                                    max: 100,
+                                    stepSize: 10
+                                }
+                            }],
                         }
                     },
                 }
             }
+
+            // jQuery
+            //*********************************************//
+            //***************table-management**************//
+            //*********************************************//
+            $(function(){
+                var prefixBPMRaw = 'bpmRaw_'
+                p_tableDnD();
+                p_tableShadow();
+                // プラスボタンクリック時
+                $(".PlusBtn").on('click',function(){
+                    // 番下へスクロール
+                    setTimeout(function() {
+                        window.scroll(0,$(document).height());
+                    },0);
+                    $(".table-management tbody tr:first-child").clone(true).appendTo(".table-management tbody");
+                    $(".table-management tbody tr:last-child td input").val("");
+                    // $(".table-management tbody tr:last-child td select option").atter("selected",false);
+                    p_tableDnD();
+                    p_tableShadow();
+                });
+                // マイナスボタンクリック時
+                $(".MinusBtn").on('click',function(){
+                    // 行が2行以上あればクリックされた列を削除
+                    if ($(".table-management tbody tr").length >= 2) {
+                        $(this).parents('tr').remove();
+                        p_tableDnD();
+                        p_tableShadow();
+                    }
+                });
+            // ドラッグアンドドロップ制御
+                function p_tableDnD(){
+                    $(".table-management").tableDnD({
+                        dragHandle: ".handle"
+                    });
+                }
+            // ドラッグアンドドロップ時に影を付ける
+                function p_tableShadow(){
+                    $(".table-management tbody tr .handle").mousedown(function(){
+                        // 領域内で押した時
+                        $(this).parents('tr').css('box-shadow','2px 3px 6px 2px #9E9E9E');
+                        return false;
+                    })
+                    $(" * ").mouseup(function(){
+                        // 離した時
+                        $(".table-management tbody tr").css('box-shadow','none');
+                    });
+                }
+            });
+            function drawChart(datasets) {
+                // var dataHSChange = getHSData();
+                //ここ↑で入力値を取得する
+                var ctx = document.getElementById("bpm");
+                // var ymax = Math.max(...dataHSchange) + 10;
+                var ymax = 160;
+                var barmax = 100;
+                let configLine = getLineConfig("bpm", datasets, ymax, barmax);
+                window.bpmChart = new Chart(ctx, configLine);
+            }
+            
             // ここまで関数定義
 
-            var dataHSChange = [[0, 150], [50, 75]];
-            //ここ↑で入力値を取得する
-            var dataHS = dataFormating(dataHSChange);
-            var ctx = document.getElementById("bpm");
-            var ymax = Math.max(...dataHS) + 10;
-            let configHS = getLineConfig("bpm", dataHS, ymax);
-            let lineChart = new Chart(ctx, configHS)
+            dataBPMChange = getBPMdataset();
+            drawChart(dataBPMChange);
+
         </script>
     </body>
 </html>

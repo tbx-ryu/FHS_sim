@@ -1,0 +1,36 @@
+.handle{
+	cursor: move;
+	position: relative;
+}
+.handle img{
+	min-width: 20px;
+	width: 20px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translateY(-50%) translateX(-50%);
+	-webkit-transform: translateY(-50%) translateX(-50%);
+}
+.PlusBtn{
+	display: block;
+	margin: 10px auto;
+	width: 25px;
+	cursor: pointer;
+}
+.MinusBtn{
+	cursor: pointer;
+	position: relative;
+}
+.MinusBtn img{
+	min-width: 20px;
+	width: 20px;
+	position: absolute;
+	top: 50%; /*親要素を起点に上から50%*/
+	left: 50%;  /*親要素を起点に左から50%*/
+	transform: translateY(-50%) translateX(-50%); /*要素の大きさの半分ずつを戻す*/
+	-webkit-transform: translateY(-50%) translateX(-50%);
+}
+.bpmInfos{
+	width: 50px;
+	min-width: 50px;
+}
