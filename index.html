@@ -7,7 +7,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <link href="main.css" rel="stylesheet" type="text/css" media="all">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/TableDnD/0.9.1/jquery.tablednd.js" integrity="sha256-d3rtug+Hg1GZPB7Y/yTcRixO/wlI78+2m08tosoRn7A=" crossorigin="anonymous"></script>
@@ -15,126 +15,211 @@
     </head>
 
     <body>
-        <table class="table tablesorter-bootstrap table-management" id="tableBPM" onchange="inputChange()">
-            <thead>
-                <tr class="nodrop nodrag">
-                    <th style="width: 5%;"></th>
-                    <th style="width: 25;">小節数</th>
-                    <th style="width: 40%;">拍数</th>
-                    <th style="width: 25%;">BPM</th>
-                    <th style="width: 5%;"></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <!-- 三本線の画像 -->
-                    <td class="handle"><img src="img/drugBottun.png"></td>
-                    <!-- 小節番号 -->
-                    <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="bpmInfos"></td>
-                    <!-- 音符の種類と拍数 -->
-                    <td name="beatInfo">
-                        <select name="notesType">
-                            <option value="4" selected>四分音符</option>
-                            <option value="8">八分音符</option>
-                            <option value="16">十六分音符</option>
-                            <option value="12">四分三連符</option>
-                            <option value="24">八分三連符</option>
-                        </select>
-                        で
-                        <input type="number" value=1 placeholder="拍数" name="beatNum" class="bpmInfos">
-                        拍目
-                    </td>
-                    <td name="BPMInfo"><input type="number" value=150 placeholder="BPM" name="BPM" class="bpmInfos"></td>
-                    <!-- マイナスボタンの画像 -->
-                    <td class="MinusBtn"><img src="img/rawMinus.png"></td>
-                </tr>
-            </tbody>
-        </table>
-        <img class="PlusBtn" src="img/rawPlus.png">
+        <h1>beatmaniaIIDX ハイスピシミュレータ</h1>
+        <p class="tableBg">
+            <table class="table tablesorter-bootstrap table-management" id="tableBPM" onchange="inputChange()">
+                <thead>
+                    <tr class="nodrop nodrag">
+                        <th style="width: 5%;"></th>
+                        <th style="width: 18%;">小節数</th>
+                        <th style="width: 54%;">拍数</th>
+                        <th style="width: 18%;">BPM</th>
+                        <th style="width: 5%;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <!-- 三本線の画像 -->
+                        <td class="handle"><img src="img/drugBottun.png"></td>
+                        <!-- 小節番号 -->
+                        <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="bpmInfos"></td>
+                        <!-- 音符の種類と拍数 -->
+                        <td name="beatInfo">
+                            <select name="notesType">
+                                <option value="4" selected>四分音符</option>
+                                <option value="8">八分音符</option>
+                                <option value="16">十六分音符</option>
+                                <option value="12">四分三連符</option>
+                                <option value="24">八分三連符</option>
+                            </select>
+                            で
+                            <input type="number" value=1 placeholder="拍数" name="beatNum" class="bpmInfos">
+                            拍目
+                        </td>
+                        <td name="BPMInfo"><input type="number" value=150 placeholder="BPM" name="BPM" class="bpmInfos"></td>
+                        <!-- マイナスボタンの画像 -->
+                        <td class="MinusBtn"><img src="img/rawMinus.png"></td>
+                    </tr>
+                </tbody>
+            </table>
+            <img class="PlusBtn" src="img/rawPlus.png">
+        </p>
 
-        <canvas id="bpm"></canvas>
+        <h3>Option項目</h3>
+        <label class="initSetting">
+            <table class="initSetting">
+                <tbody>
+                    <tr>
+                        <th>ハイスピの種類</th>
+                        <td>
+                            <label><input type="radio" name="isFHS" value=true checked> FHS </label>
+                            <label><input type="radio" name="isFHS" value=false> CHS </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Sud+系オプションの使用</th>
+                        <td>
+                            <label><input type="checkbox" id="hasSud"> sud+ </label>
+                            <label><input type="checkbox" id="hasLift"> lift </label>
+                            <label><input type="checkbox" id="hasHid"> hid+ </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>各種設定値</th>
+                        <td>
+                            <label>緑数字：<input type="number" id="opMidori" value=290></label>
+                            <label>sud+：<input type="number" id="opSud" step=1></label>
+                            <label>Lift：<input type="number" id="opLift" step=1></label>
+                            <label>hid+<input type="number" id="opHid" step=1></label>
+                            <label>HS<input type="number" id="opHS" value=5></label>
+                        </td>
+                    </tr>                        
+            </table>
+        </label>
+
+        <canvas class="graph" id="bpm"></canvas>
+        <canvas class="graph" id="speeds"></canvas>
 
         <script defer>
             // ここから関数定義，あとでモジュール化 //
 
-            function getHSData() {
-                return [{x: 0, y: 150}, {x: 50, y: 75}, {x: 70, y: 75}]
-            }
-
+            // function getHSData() {
+            //     return [{x: 0, y: 150}, {x: 50, y: 75}, {x: 70, y: 75}]
+            // }
             function updateGraph(chart, dataUpdated) {
                 chart.update(dataUpdated) //TODO
             }
 
             function getBPMdataset() {
-                arrBPM = [];
+                var arrBPM = [];
                 let table = document.getElementById('tableBPM');
                 for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header
-                    row = table.rows[rowNum]
+                    var row = table.rows[rowNum]
                     if(rowNum == 1) {
                         row.cells["barInfo"].children["barNum"].value = 1;
                         row.cells["beatInfo"].children["notesType"].value = 4;
                         row.cells["beatInfo"].children["beatNum"].value = 1;
                     }
-                    barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
-                    notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
-                    beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
-                    bpm = parseInt(row.cells["BPMInfo"].children["BPM"].value)
+                    var barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
+                    var notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
+                    var beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
+                    var bpm = parseInt(row.cells["BPMInfo"].children["BPM"].value)
                     if(barNum && notesType && beatNum) {
-                        arrBPM.push({x: barNum+1/notesType*(beatNum-1), y: bpm})
+                        arrBPM.push({x: barNum+1/notesType*(beatNum-1), bpm: bpm})
                     }
                 }
+                // console.log(arrBPM)
+                arrBPM.sort(function (a, b) {
+                    return a.x - b.x;
+                });
                 // endの小節線情報も入れる
-                arrBPM.push({x: 100, y: bpm});
-                console.log(arrBPM)
+                arrBPM.push({x: 100, bpm: arrBPM[arrBPM.length-1].bpm});
+                // TODO: 100をbarmaxに変える, barmaxがすべてのXより大きいことを保証する
                 return arrBPM;
+            }
+            function getHSdataset(arrBPM) {
+                var arrHS = [];
+                arrHS.push(getInitialSetting(arrBPM[0].bpm));
+                // TODO: ユーザが追加したHS変更情報を取得する処理をつくる
+                arrHS.sort(function (a, b) {
+                    return a.x - b.x;
+                })
+                const lastHS = Object.assign({}, arrHS.slice(-1)[0]);
+                lastHS.x = 100;
+                arrHS.push(lastHS);
+                return arrHS;
+            }
+            function getInitialSetting(iniBPM) {
+                // return {x, midori, sud, hid, lift, hs}
+                var hasSud = document.getElementById('hasSud').checked;
+                var hasLift = document.getElementById('hasLift').checked;
+                var hasHid = document.getElementById('hasHid').checked;
+                // console.log(hasSud, hasLift, hasHid)
+                // TODO: bpmを取得する関数の作成
+                // var iniBPM = 150;
+                if(!(hasSud || hasLift || hasHid)) {
+                    var hs = document.getElementById('opHS').value;
+                    var [sud, lift, hid] = [0, 0, 0];
+                    var midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
+                } else {
+                    var sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
+                    var lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
+                    var hid = hasHid? parseInt(document.getElementById('opHid').value) : 0;
+                    if(document.getElementsByName('isFHS')[0].checked) {
+                        var midori = parseInt(document.getElementById('opMidori').value);
+                        var hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
+                    } else {
+                        var hs = parseInt(document.getElementById('opHS').value);
+                        var midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
+                    }
+                }
+                return {x: 1, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs};
+            }
+
+            function calcHS2Midori(hs, sud, lift, hid, bpm, baseMidori=348000) {
+                console.log(sud)
+                return (baseMidori/(bpm*hs)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
+            }
+            function calcMidori2HS(midori, sud, lift, hid, bpm, baseMidori=348000) {
+                return (baseMidori/(bpm*midori)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
             }
 
             function inputChange(){
-                if (bpmChart) {
-                    bpmChart.destroy();
-                }
-                dataBPMChange = getBPMdataset();
-                drawChart(dataBPMChange);
+                if (bpmChart) {bpmChart.destroy();}
+                if (speedsChart) {speedsChart.destroy();}
+                var dataBPMChange = getBPMdataset();
+                var dataHSChange = getHSdataset(dataBPMChange);
+                drawChart(dataBPMChange, canvasID="bpm", useDatasets=[{label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"},]);
+                drawChart(dataHSChange, canvasID="speeds", useDatasets=[{label: "緑数字", yAxisKey: "midori", color:"#7fff7a"},]);
+
             }
 
-            function getLineConfig(dataname, formatedData, ymax, barmax) {
+            function getLineConfig(formatedData, ymax, barmax, useDatasets) {
+                var datasets = []
+                for (const useDataset of useDatasets ) {
+                    datasets.push({
+                            label: useDataset.label, 
+                            data: formatedData, 
+                            parsing: {xAxisKey: 'x', yAxisKey: useDataset.yAxisKey},
+                            borderColor: useDataset.color,
+                            fill: false,
+                            stepped: true,
+                            spanGaps: true,
+                        });
+                }
                 return {
                     type: "line", 
-                    data: {
-                        // labels: ["0", "10", "20", "30", "40", "50", "60", "70"],     
-                        datasets: [{
-                            label: "bpm", 
-                            data: formatedData, 
-                            borderColor: "#f88",
-                            fill: false,
-                            steppedLine: true,
-                            // tension: 0,
-                            spanGaps: true,
-                        }],
+                    data: { //TODO: bpmとspeedでグラフを分ける処理を追加する
+                        datasets: datasets,
                     },
                     spanGaps: true,
                     options: {
-                        // responsive: true,
-                        // interaction: {
-                        //     intersect: false,
-                        //     axis: 'x'
-                        // },
                         scales: {
-                            yAxes: [{
+                            y: {
+                                min: 0,
+                                max: ymax,
                                 ticks: {
-                                    min: 0,
-                                    max: ymax,
                                     stepSize: 50
                                 }
-                            }],
-                            xAxes: [{
+                            },
+                            x: {
                                 type: "linear",
+                                min: 1,
+                                max: barmax,
                                 ticks: {
-                                    min: 1,
-                                    max: 100,
                                     stepSize: 10
                                 }
-                            }],
+                            },
                         }
                     },
                 }
@@ -188,21 +273,28 @@
                     });
                 }
             });
-            function drawChart(datasets) {
-                // var dataHSChange = getHSData();
-                //ここ↑で入力値を取得する
-                var ctx = document.getElementById("bpm");
+
+            function drawChart(datasets, canvasID="bpm", useDatasets, update=false) {
+                var ctx = document.getElementById(canvasID);
                 // var ymax = Math.max(...dataHSchange) + 10;
-                var ymax = 160;
+                var ymax = 300;
                 var barmax = 100;
-                let configLine = getLineConfig("bpm", datasets, ymax, barmax);
-                window.bpmChart = new Chart(ctx, configLine);
+                let configLine = getLineConfig(datasets, ymax, barmax, useDatasets);
+                if(canvasID == "bpm") {
+                    bpmChart = new Chart(ctx, configLine);
+                } else if(canvasID == "speeds") {
+                    speedsChart = new Chart(ctx, configLine);
+                }
             }
             
             // ここまで関数定義
-
-            dataBPMChange = getBPMdataset();
-            drawChart(dataBPMChange);
+            var bpmChart, speedsChart
+            var dataBPMChange = getBPMdataset();
+            var dataHSChange = getHSdataset(dataBPMChange);
+            // TODO: 描画するデータセットをチェックボックスで指定できるようにする
+            // useDatasets = ["使うデータセット"]
+            drawChart(dataBPMChange, canvasID="bpm", useDatasets=[{label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"},], update=false);
+            drawChart(dataHSChange, canvasID="speeds", useDatasets=[{label: "緑数字", yAxisKey: "midori", color:"#7fff7a"},], update=false);
 
         </script>
     </body>
