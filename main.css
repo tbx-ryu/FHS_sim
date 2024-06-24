@@ -13,7 +13,7 @@
 }
 .PlusBtn{
 	display: block;
-	margin: 10px auto;
+	margin: 5px auto;
 	width: 25px;
 	cursor: pointer;
 }
@@ -30,20 +30,31 @@
 	transform: translateY(-50%) translateX(-50%); /*要素の大きさの半分ずつを戻す*/
 	-webkit-transform: translateY(-50%) translateX(-50%);
 }
-.bpmInfos{
-	width: 50px;
+.textValue{
+	width: 60px;
 	min-width: 50px;
 }
+.smallNotes{
+	font-size: 0.7em;
+}
 .tableBg{
-	width: 500px;
+	width: 1000px;
 	position: relative;
 	left: 1%;
 }
+.table_fhs{
+	background-color: skyblue;
+}
+.table_chs{
+	background-color: bisque;
+}
+
 .graph{
-	height: 400px;
+	height: 200px;
 }
 table th,table td{
 	text-align: left;
+	vertical-align: middle;
 	/* padding: 15px 0; */
 }
 /* table th{
