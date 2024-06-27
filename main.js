@@ -5,7 +5,7 @@ function updateGraph(chart, dataUpdated) {
 function getBPMdataset() {
     let arrBPM = [];
     let table = document.getElementById('bpmTable');
-    for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header
+    for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header and footer(img of +)
         let row, barNum, notesType, beatNum, bpm;
         row = table.rows[rowNum]
         if(rowNum == 1) {
@@ -18,7 +18,7 @@ function getBPMdataset() {
         beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
         bpm = parseInt(row.cells["BPMInfo"].children["BPM"].value)
         if(barNum && notesType && beatNum) {
-            arrBPM.push({x: barNum+1/notesType*(beatNum-1), bpm: bpm})
+            arrBPM.push({x: calcTiming(barNum, notesType, beatNum), bpm: bpm})
         }
     }
     // console.log(arrBPM)
@@ -33,7 +33,21 @@ function getBPMdataset() {
 function getHSdataset(arrBPM) {
     let arrHS = [];
     arrHS.push(getInitialSetting(arrBPM[0].bpm));
-    // TODO: ユーザが追加したHS変更情報を取得する処理をつくる
+    let table = document.getElementById('operationTable');
+    for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header and footer(img of +)
+        let row, barNum, notesType, beatNum, operation;
+        row = table.rows[rowNum]
+        barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
+        notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
+        beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
+        operation = "hoge"; //parseInt(row.cells["BPMInfo"].children["BPM"].value);
+        // operation = {hsType: row.className,
+        //              opType: row.cells["Operation"].children["OpType"].value,
+        //              opValue: row.cells["Operation"].children["operationValue"].value}
+        if(barNum && notesType && beatNum) {
+            arrHS.push(calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], operation));
+        }
+    }
     arrHS.sort(function (a, b) {
         return a.x - b.x;
     })
@@ -42,6 +56,11 @@ function getHSdataset(arrBPM) {
     arrHS.push(lastHS);
     return arrHS;
 }
+
+function calcTiming(barNum, notesType, beatNum) {
+    return barNum + 1 / notesType * (beatNum - 1)
+}
+
 function getInitialSetting(iniBPM) {
     let sud, lift, hid, midori, hs;
     let hasSud = document.getElementById('hasSud').checked;
@@ -67,10 +86,23 @@ function getInitialSetting(iniBPM) {
     return {x: 1, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs};
 }
 
+function calcOperation(x, prevArr, op) {
+    let midori, sud, lift, hid, hs;
+    if (op == "hoge") {
+        midori = 0;
+        sud = 0;
+        lift = 0;
+        hid = 0;
+        hs = 0;
+    }
+    return {x: x, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs}; 
+}
+
 function calcHS2Midori(hs, sud, lift, hid, bpm, baseMidori=348000) {
     // console.log(sud)
     return (baseMidori/(bpm*hs)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
 }
+
 function calcMidori2HS(midori, sud, lift, hid, bpm, baseMidori=348000) {
     return (baseMidori/(bpm*midori)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
 }
@@ -83,7 +115,6 @@ function inputChange(){
     // drawChart(dataBPMChange, canvasID="bpm", useDatasets=[{label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"},]);
     // drawChart(dataHSChange, canvasID="speeds", useDatasets=[{label: "緑数字", yAxisKey: "midori", color:"#7fff7a"},]);
 }
-
 
 function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
     let chart = c3.generate({
@@ -112,18 +143,52 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
             }
         }
     });
-    return {chart};
+    return chart;
 }
 
-// HS操作に更新があった際，各タイミングでFHSかCHSか確認する
+function updateCharts(charts, useDatasets) {
+    let chart, useDataset, datasets;
+    let dataBPMChange = getBPMdataset();
+    let dataHSChange = getHSdataset(dataBPMChange);
+    for ([chart, useDataset, datasets] of zip(charts, useDatasets, [dataBPMChange, dataHSChange])) {
+        chart.load({
+            json: datasets,
+            keys: {
+                x: "x",
+                value: [useDataset.yAxisKey],
+            },
+            types: {
+                [useDataset.yAxisKey]: "step"
+            },
+        })
+    }
+}
+
+function* zip(...iterables) {
+    const iterators = iterables.map(it => it[Symbol.iterator]());
+    while (iterators.length) {
+        const result = [];
+        for (const it of iterators) {
+            const elemObj = it.next();
+            if (elemObj.done) {
+                return;
+            }
+            result.push(elemObj.value);
+        }
+        yield result;
+    }
+}
+
+// HS操作に更新があった際，各タイミングでFHSかCHSかなど確認する
 function checkOperations() {
     const tbl = document.getElementById("operationTable");
     // const textSarachon = document.getElementById("textSarachon");
     // const operationValue = document.getElementById("operationValue")
     let isFHS = document.getElementsByName('isFHS')[0].checked;
-    let cell;
-    const wSarachon = ["sud_up", "sud_down", "lift_up", "lift_down"];
-    const wOperationValue = ["hs_down", "hs_up", "sud_up", "sud_down", "lift_up", "lift_down"];
+    let sudInit = document.getElementById('hasSud').checked;
+    let cell, opType, hasSud, hasLift;
+    const wSarachon = ["sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
+    const wOperationValue = ["hs_down", "hs_up", "sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
     for (let i=1; i<tbl.rows.length; i++) {
         cell = tbl.rows[i].cells["Operation"]
         if (cell.children["OpType"].value == "hstype_change") {
@@ -149,58 +214,123 @@ function checkOperations() {
     }
 }
 
+function sortTable(tableId) {
+    let i, nRow, nCol, oldTds;
+    let oldTable = document.getElementById(tableId);
+    let oldTbody = oldTable.getElementsByTagName("tbody")[0];
+    let oldTrs = oldTbody.getElementsByTagName("tr")
+    let newIdxs = new Array();
+    let cellVals = new Array();
+
+    for (nRow = 0; nRow < oldTrs.length; nRow++) { // skip footer (img of +)
+        barNum = parseInt(oldTable.rows[nRow+1].cells["barInfo"].children["barNum"].value);
+        notesType = parseInt(oldTable.rows[nRow+1].cells["beatInfo"].children["notesType"].value);
+        beatNum = parseInt(oldTable.rows[nRow+1].cells["beatInfo"].children["beatNum"].value);
+        newIdxs[nRow] = {
+            idx: nRow,
+            value:calcTiming(
+                Boolean(barNum) ? barNum : 1,
+                Boolean(notesType) ? notesType : 4,
+                Boolean(beatNum) ? beatNum : 1
+            )};
+    }
+    newIdxs.sort(tableCompare)
+    for (nRow = 0; nRow < newIdxs.length; nRow++) { // skip footer (img of +)
+        let newSelect, oldSelect;
+        // let newRow = oldTable.insertRow(-1);
+        // oldTbody.appendChild(oldTrs[newIdxs[nRow]["idx"]].cloneNode(true));
+        $("#"+tableId).find("tbody tr").slice(newIdxs[nRow]["idx"], newIdxs[nRow]["idx"]+1).clone(true).appendTo($("#"+tableId).find("tbody"))
+        for (let nSelect=0; nSelect<$("#"+tableId).find("tbody tr:last-child").find("select").length; nSelect++) {
+            newSelect = $("#"+tableId).find("tbody tr:last-child").find("select")[nSelect]
+            oldSelect = $("#"+tableId).find("tbody tr").slice(newIdxs[nRow]["idx"], newIdxs[nRow]["idx"]+1).find("select")[nSelect]
+            $(newSelect).val($(oldSelect).val())
+        }
+    }
+    for (nRow = 0; nRow < newIdxs.length; nRow++) {
+        oldTbody.deleteRow(0);
+    }
+}
+
+function tableCompare(a, b) {
+    if (a.value == b.value) {
+        return 0;
+    } else if (a.value > b.value) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
 function range(start, stop, step=10) {
     return Array.from({ length: (stop - start) / step + 1}, (_, i) => start + i * step);
 }
 
 // jQuery
-//*********************************************//
-//***************table-management**************//
-//*********************************************//
 $(function(){
-    p_tableDnD();
     // プラスボタンクリック時
     $(".PlusBtn").on('click',function(){
-        $(this).parent().find("table tbody tr:first-child").clone(true).appendTo($(this).parent().find("table tbody"));
-        $(this).parent().find("table tbody tr:last-child td input").val("");
+        $(this).parent().find("table tbody tr:last-child").clone(true).appendTo($(this).parent().find("table tbody"));
+        let newSelect, oldSelect;
+        for (let nSelect=0; nSelect<$(this).parent().find("table tbody tr:last-child").find("select").length; nSelect++) {
+            newSelect = $(this).parent().find("table tbody tr:last-child").find("select")[nSelect]
+            oldSelect = $(this).parent().find("table tbody tr").slice(-2, -1).find("select")[nSelect]
+            $(newSelect).val($(oldSelect).val())
+        }
+        sortTable("operationTable");
+        sortTable("bpmTable");
         checkOperations();
-        p_tableDnD();
+        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);
     });
     // マイナスボタンクリック時
     $(".MinusBtn").on('click',function(){
         // 行が2行以上あればクリックされた列を削除
-        if ($(".table-management tbody tr").length >= 2) {
+        if ($(this).closest("tbody").find('tr').length >= 2) {
             $(this).parents('tr').remove();
+            sortTable("operationTable");
+            sortTable("bpmTable");
             checkOperations();
-            p_tableDnD();
+            updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);
         }
     });
-// ドラッグアンドドロップ制御
-    function p_tableDnD(){
-        $(".tableBody").sortable({
-            handle: ".handle"
-        });
-    }
-});
+})
 
 // TODO
 // 画像を表示し，ギアチェンイベントが有ることを表示する
 // 表示された画像をクリックし，設定を変更できること
 
-let bpmChart, speedsChart;
+var bpmChart, speedsChart;
+var useDatasetBPM = {label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"};
+var useDatasetSpeed = {label: "緑数字", yAxisKey: "midori", color: "#7fff7a"};
 const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
 const initTable = document.getElementById("initTable");
-let changeOperationBottun = document.getElementsByName("changeOperation")
+// let changeOperationBottun = document.getElementsByName("changeOperation")
 let dataBPMChange = getBPMdataset();
 let dataHSChange = getHSdataset(dataBPMChange);
 // TODO: 描画するデータセットをチェックボックスで指定できるようにする
-// useDatasets = ["使うデータセット"]
 checkOperations();
-operationTable.addEventListener("change", checkOperations)
-initTable.addEventListener("change", checkOperations)
-// changeOperationBottun.addEventListener("click". checkOperations)
-// drawChart(dataBPMChange, canvasID="bpm", useDatasets=[{label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"}], update=false);
-// drawChart(dataHSChange, canvasID="speeds", useDatasets=[{label: "緑数字", yAxisKey: "midori", color:"#7fff7a"}], update=false);
-bpmChart = drawChart(dataBPMChange, canvasID="bpm", useDataset={label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"}, update=false);
-speedChart = drawChart([{x:1, midori:290}, {x:20, midori:300}, {x:100, midori:280}], canvasID="speed", useDataset={label: "緑数字", yAxisKey: "midori", color: "#7fff7a"}, update=false);
+sortTable("operationTable");
+sortTable("bpmTable");
+bpmChart = drawChart(dataBPMChange, canvasID="bpm", useDataset=useDatasetBPM, update=false);
+speedChart = drawChart([{x:1, midori:290}, {x:20, midori:300}, {x:100, midori:280}], canvasID="speed", useDataset=useDatasetSpeed, update=false);
+bpmTable.addEventListener(
+    "change",
+    function () {
+        sortTable("operationTable");
+        sortTable("bpmTable");
+        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);}
+    );
+operationTable.addEventListener(
+    "change",
+    function () {
+        sortTable("operationTable");
+        sortTable("bpmTable");
+        checkOperations();
+        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);}
+    );
+initTable.addEventListener(
+    "change",
+    function() {
+        checkOperations();
+        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);}
+    );
