@@ -33,6 +33,8 @@ function getBPMdataset() {
 function getHSdataset(arrBPM) {
     let arrHS = [];
     arrHS.push(getInitialSetting(arrBPM[0].bpm));
+    let sudInit = arrHS[0]["hasSud"];
+    let hasLift = arrHS[0]["hasLift"];
     let table = document.getElementById('operationTable');
     for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header and footer(img of +)
         let row, barNum, notesType, beatNum, operation;
@@ -40,13 +42,23 @@ function getHSdataset(arrBPM) {
         barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
         notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
         beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
-        operation = "hoge"; //parseInt(row.cells["BPMInfo"].children["BPM"].value);
-        // operation = {hsType: row.className,
-        //              opType: row.cells["Operation"].children["OpType"].value,
-        //              opValue: row.cells["Operation"].children["operationValue"].value}
+        // operation = "hoge"; //parseInt(row.cells["BPMInfo"].children["BPM"].value);
+        operation = {hsType: row.className,
+                     opType: row.cells["operation"].children["opType"].value,
+                     opValue: row.cells["operation"].children["operationValue"].value}
         if(barNum && notesType && beatNum) {
-            arrHS.push(calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], operation));
+            arrHS.push(calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], arrBPM, operation));
         }
+    }
+    for (let arrBPMr of arrBPM.slice(1, -1)) {
+        let arrAdd = arrBPMr["x"] == 1 ?
+                        structuredClone(arrHS[0]) :
+                        structuredClone(arrHS.findLast(function (arrHSr) {
+                                return arrHSr["x"] < arrBPMr["x"]; 
+                            }));
+        arrAdd["x"] = arrBPMr["x"];
+        arrAdd["midori"] = calcHS2Midori(arrAdd["hs"], arrAdd["sud"], arrAdd["lift"], arrAdd["hid"], arrBPMr["bpm"]);
+        arrHS.push(arrAdd);
     }
     arrHS.sort(function (a, b) {
         return a.x - b.x;
@@ -68,7 +80,7 @@ function getInitialSetting(iniBPM) {
     // let hasHid = document.getElementById('hasHid').checked;
     let hasHid = false;
     if(!(hasSud || hasLift || hasHid)) {
-        hs = document.getElementById('opHS').value;
+        hs = parseInt(document.getElementById('opHS').value);
         [sud, lift, hid] = [0, 0, 0];
         midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
     } else {
@@ -83,19 +95,22 @@ function getInitialSetting(iniBPM) {
             midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
         }
     }
-    return {x: 1, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs};
+    return {x: 1, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs, hasSud: hasSud, hasLift: hasLift};
 }
 
-function calcOperation(x, prevArr, op) {
-    let midori, sud, lift, hid, hs;
-    if (op == "hoge") {
-        midori = 0;
-        sud = 0;
-        lift = 0;
-        hid = 0;
-        hs = 0;
+function calcOperation(x, prevArr, arrBPM, op) {
+    let bpm = x==1 ? arrBPM[0]["bpm"] : arrBPM.findLast(function (bpmInfo) {
+                        return bpmInfo["x"] < x; 
+                        })["bpm"];
+    let curArr = structuredClone(prevArr);
+    curArr["x"] = x;
+    if (op["opType"] == "hs_down" || op["opType"] == "hs_up") {
+        let hsChangeVal = (op["hsType"] == "table_fhs" && prevArr["hasSud"]) ? 0.5 * op["opValue"] : 0.25 * op["opValue"];
+        curArr["hs"] = op["opType"] == "hs_down" ? prevArr["hs"] - hsChangeVal : prevArr["hs"] + hsChangeVal;
+        curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], bpm)
+        console.log(hsChangeVal)
     }
-    return {x: x, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs}; 
+    return curArr; 
 }
 
 function calcHS2Midori(hs, sud, lift, hid, bpm, baseMidori=348000) {
@@ -190,13 +205,13 @@ function checkOperations() {
     const wSarachon = ["sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
     const wOperationValue = ["hs_down", "hs_up", "sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
     for (let i=1; i<tbl.rows.length; i++) {
-        cell = tbl.rows[i].cells["Operation"]
-        if (cell.children["OpType"].value == "hstype_change") {
+        cell = tbl.rows[i].cells["operation"]
+        if (cell.children["opType"].value == "hstype_change") {
             isFHS = !isFHS
         }
         if (isFHS){
             tbl.rows[i].className = "table_fhs";
-            if (wSarachon.includes(cell.children["OpType"].value)) {
+            if (wSarachon.includes(cell.children["opType"].value)) {
                 cell.children["textSarachon"].hidden = false;
             } else {
                 cell.children["textSarachon"].hidden = true;
@@ -206,7 +221,7 @@ function checkOperations() {
             cell.children["textSarachon"].hidden = true;
             cell.children["operationValue"].hidden = true;
         }
-        if (wOperationValue.includes(cell.children["OpType"].value)) {
+        if (wOperationValue.includes(cell.children["opType"].value)) {
             cell.children["operationValue"].hidden = false;
         } else {
             cell.children["operationValue"].hidden = true;
