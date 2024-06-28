@@ -307,6 +307,48 @@ $(function(){
             updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);
         }
     });
+// 
+// 
+//  開始時設定を，ページ読み込み時に更新する（非活性化や初期値の自動入力など）
+//     
+    function switchEnableByCheck(checkId, opId) {
+        if ($("#"+checkId).prop("checked") == false) {
+            $("#"+opId).attr({disabled:"disabled", "placeholder":0});
+        } else {
+            $("#"+opId).removeAttr("disabled placeholder");
+        }
+    };
+    function switchEnableByRadio(radioName, opIdToEnable, opIdToDisable, otherCond=true) {
+        if ($("input:radio[name='"+radioName+"']:checked").val() == "true" && otherCond) {
+            $("#"+opIdToDisable).attr({disabled: "disabled"})
+            $("#"+opIdToEnable).removeAttr("disabled")
+        } else {
+            $("#"+opIdToEnable).attr({disabled: "disabled"})
+            $("#"+opIdToDisable).removeAttr("disabled")
+        }
+    }
+    function isSudLiftChecked() {
+        return $("#hasSud").prop("checked")==true || $("#hasLift").prop("checked")==true
+    }
+    // initialize
+    switchEnableByCheck("hasSud", "opSud");
+    switchEnableByCheck("hasLift", "opLift");
+    switchEnableByRadio("isFHS", "opMidori", "opHS", $("#hasSud").prop("checked")==true || $("#hasLift").prop("checked")==true);
+    // set event handler
+    let evargs = {radioName: "isFHS",
+                  opIdToE: "opMidori",
+                  opIdToD: "opHS",};
+    $("#hasSud").on("click", Object.assign(evargs, {checkSudId: "hasSud", opSudId: "opSud"}), function(event) {
+        switchEnableByCheck(event.data.checkSudId, event.data.opSudId);
+        switchEnableByRadio(event.data.radioName, event.data.opIdToE, event.data.opIdToD, isSudLiftChecked());
+    });
+    $("#hasLift").on("click", Object.assign(evargs, {checkLiftId: "hasLift", opLiftId: "opLift"}), function(event) {
+        switchEnableByCheck(event.data.checkLiftId, event.data.opLiftId);
+        switchEnableByRadio(event.data.radioName, event.data.opIdToE, event.data.opIdToD, isSudLiftChecked());
+    });
+    $("input:radio[name='isFHS']").on("click", evargs, function(event) {
+        switchEnableByRadio(event.data.radioName, event.data.opIdToE, event.data.opIdToD, isSudLiftChecked());
+    });
 })
 
 // TODO

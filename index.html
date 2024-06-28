@@ -123,7 +123,7 @@
         </div>
 
         <h4>開始時設定</h4>
-        <label class="initSetting">
+        <div class="initSetting">
             <table class="initSetting tableBg", id="initTable">
                 <tbody>
                     <tr>
@@ -134,14 +134,14 @@
                             ハイスピ : <input type="number" id="opHS" value=5 class="textValue"><br>
                         </td>
                         <td>
-                            <label><input type="checkbox" id="hasSud"> sud+ </label>
-                             : <input type="number" id="opSud" step=1 class="textValue"><br>
-                            <label><input type="checkbox" id="hasLift"> LIFT </label>
-                             : <input type="number" id="opLift" step=1 class="textValue"></label><br>
+                            <label><input type="checkbox" id="hasSud"> sud+
+                             : <input type="number" id="opSud" step=1 class="textValue" placeholder=0 disabled="disabled"><br>
+                            <label><input type="checkbox" id="hasLift"> LIFT
+                             : <input type="number" id="opLift" step=1 class="textValue" placeholder=0 disabled="disabled"></label><br>
                         </td>
                     </tr>
             </table>
-        </label>
+        </div>
 
         <div class="graph" id="bpm"></div>
         <div class="graph" id="speed"></div>
