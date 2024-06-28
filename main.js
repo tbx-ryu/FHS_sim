@@ -57,7 +57,7 @@ function getHSdataset(arrBPM) {
                                 return arrHSr["x"] < arrBPMr["x"]; 
                             }));
         arrAdd["x"] = arrBPMr["x"];
-        arrAdd["midori"] = calcHS2Midori(arrAdd["hs"], arrAdd["sud"], arrAdd["lift"], arrAdd["hid"], arrBPMr["bpm"]);
+        arrAdd["midori"] = calcHS2Midori(arrAdd["hs"], arrAdd["sud"], arrAdd["lift"], arrAdd["hid"], arrAdd["hasSud"], arrAdd["hasLift"], arrBPMr["bpm"]);
         arrHS.push(arrAdd);
     }
     arrHS.sort(function (a, b) {
@@ -82,20 +82,20 @@ function getInitialSetting(iniBPM) {
     if(!(hasSud || hasLift || hasHid)) {
         hs = parseInt(document.getElementById('opHS').value);
         [sud, lift, hid] = [0, 0, 0];
-        midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
+        midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
     } else {
         sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
         lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
         hid = hasHid? parseInt(document.getElementById('opHid').value) : 0;
         if(document.getElementsByName('isFHS')[0].checked) {
             midori = parseInt(document.getElementById('opMidori').value);
-            hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
+            hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         } else {
             hs = parseInt(document.getElementById('opHS').value);
-            midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, bpm=iniBPM);
+            midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         }
     }
-    return {x: 1, midori: midori, sud: sud, lift: lift, hid: hid, hs: hs, hasSud: hasSud, hasLift: hasLift};
+    return {x: 1, midori: midori, memMidori:midori, sud: sud, lift: lift, hid: hid, hs: hs, hasSud: hasSud, sudInit: hasSud, hasLift: hasLift};
 }
 
 function calcOperation(x, prevArr, arrBPM, op) {
@@ -105,30 +105,63 @@ function calcOperation(x, prevArr, arrBPM, op) {
     let curArr = structuredClone(prevArr);
     curArr["x"] = x;
     if (op["opType"] == "hs_down" || op["opType"] == "hs_up") {
-        let hsChangeVal = (op["hsType"] == "table_fhs" && prevArr["hasSud"]) ? 0.5 * op["opValue"] : 0.25 * op["opValue"];
-        curArr["hs"] = op["opType"] == "hs_down" ? prevArr["hs"] - hsChangeVal : prevArr["hs"] + hsChangeVal;
-        curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], bpm)
-        console.log(hsChangeVal)
+        // 黒鍵盤と白鍵盤
+        let hsChangeVal = (op["hsType"] == "table_fhs" && curArr["hasSud"]) ? 0.5 * parseInt(op["opValue"]) : 0.25 * parseInt(op["opValue"]);
+        curArr["hs"] = op["opType"] == "hs_down" ? curArr["hs"] - hsChangeVal : curArr["hs"] + hsChangeVal;
+        curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+    } else if (op["opType"] == "sud_off") {
+        // サドプラ外し
+        curArr["hasSud"] = false;
+        curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+    } else if (op["opType"] == "sud_on") {
+        curArr["sudInit"] = true;
+        curArr["hasSud"] = true;
+        curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+    } else if (op["opType"] == "turntable"){
+        // 皿回したとき
+        if (op["hsType"] == "table_fhs") {
+            if (curArr["hasSud"] == true) {
+                curArr["sud"] += parseInt(op["opValue"]);
+                curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+                curArr["midori"] = curArr["memMidori"];
+            } else if (curArr["hasLift"] == true && op["sudInit"] == false) {
+                curArr["lift"] += parseInt(op["opValue"]);
+                curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+                curArr["midori"] = curArr["memMidori"];
+            } else if (op["sudInit"] == true) {
+                curArr["lift"] += parseInt(op["opValue"]);
+                curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+            } else {
+                curArr["hs"] += parseFloat(op["opValue"]);
+                curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+            }
+        } else {
+            if (curArr["hasSud"] == true) {
+                op["sud"] += parseInt(op["opValue"]);
+            } else if (curArr["hasLift"] == true) {
+                op["lift"] += parseInt(op["opValue"]);
+            } else {
+                console.log("nani mo nai");
+            }
+            curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+        }
+    } else if (op["opType"] == "hstype_change" && op["hsType"] == "table_fhs") {
+        curArr["memMidori"] = curArr["midori"];
     }
     return curArr; 
 }
 
-function calcHS2Midori(hs, sud, lift, hid, bpm, baseMidori=348000) {
+function calcHS2Midori(hs, sud, lift, hid, hasSud, hasLift, bpm, baseMidori=348000) {
     // console.log(sud)
+    sud = hasSud == true ? sud: 0;
+    lift = hasLift == true ? lift: 0;
     return (baseMidori/(bpm*hs)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
 }
 
-function calcMidori2HS(midori, sud, lift, hid, bpm, baseMidori=348000) {
+function calcMidori2HS(midori, sud, lift, hid, hasSud, hasLift, bpm, baseMidori=348000) {
+    sud = hasSud == true ? sud: 0;
+    lift = hasLift == true ? lift: 0;
     return (baseMidori/(bpm*midori)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
-}
-
-function inputChange(){
-    // if (bpmChart) {bpmChart.destroy();}
-    // if (speedsChart) {speedsChart.destroy();}
-    // let dataBPMChange = getBPMdataset();
-    // let dataHSChange = getHSdataset(dataBPMChange);
-    // drawChart(dataBPMChange, canvasID="bpm", useDatasets=[{label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"},]);
-    // drawChart(dataHSChange, canvasID="speeds", useDatasets=[{label: "緑数字", yAxisKey: "midori", color:"#7fff7a"},]);
 }
 
 function drawChart(datasets, canvasID="bpm", useDataset, update=false) {

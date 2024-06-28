@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
+    <head class="header">
         <meta charset="utf-8">
         <title>FHS Simulator</title>
         <meta name="description" content="ハイスピ設定のシミュレーションサイト">
@@ -19,112 +19,120 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.css" />
         <script defer src="main.js"></script>
     </head>
-
+    
     <body>
-        <h1>beatmaniaIIDX ハイスピシミュレータ</h1>
-        <h4>BPM変化</h4>
-        <div class="tableBg">
-            <table class="table tablesorter-bootstrap table-management" id="bpmTable">
-                <thead>
-                    <tr class="nodrop nodrag">
-                        <th style="width: 5%;"></th>
-                        <th style="width: 10%;">小節数</th>
-                        <th style="width: 30%;">拍数</th>
-                        <th style="width: 50%;">BPM</th>
-                        <th style="width: 5%;"></th>
-                    </tr>
-                </thead>
+        <header class="myheader">
+            <h1>beatmaniaIIDX ハイスピシミュレータ</h1>
+        </header>
+        <p>
+            ここらへんにつらつら説明を書く．<br>
+            hoge-
+        </p>
+        <div class="postIt bpm">
+            <h4>BPM変化</h4>
+            <div class="tableBg">
+                <table class="table tablesorter-bootstrap table-sm table-arr" id="bpmTable">
+                    <thead class="table-dark">
+                        <tr class="nodrop nodrag">
+                            <!-- <th style="width: 5%;"></th> -->
+                            <th style="width: 10%;">小節数</th>
+                            <th style="width: 30%;">拍数</th>
+                            <th style="width: 55%;">BPM</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
 
-                <tbody class="tableBody">
-                    <tr>
-                        <!-- 三本線の画像 -->
-                        <td class="handle"><img src="img/drugBottun.png"></td>
-                        <!-- 小節番号 -->
-                        <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="textValue"></td>
-                        <!-- 音符の種類と拍数 -->
-                        <td name="beatInfo">
-                            <select name="notesType">
-                                <option value="4" selected>四分音符</option>
-                                <option value="8">八分音符</option>
-                                <option value="16">十六分音符</option>
-                                <option value="6">四分三連符</option>
-                                <option value="12">八分三連符</option>
-                            </select>
-                            で
-                            <input type="number" value=1 placeholder="拍数" name="beatNum" class="textValue">
-                            拍目
-                        </td>
-                        <td name="BPMInfo"><input type="number" value=150 placeholder="BPM" name="BPM" class="textValue"></td>
-                        <!-- マイナスボタンの画像 -->
-                        <td class="MinusBtn"><img src="img/rawMinus.png"></td>
-                    </tr>
-                </tbody>
-            </table>
-            <img class="PlusBtn" src="img/rawPlus.png">
+                    <tbody class="tableBody">
+                        <tr>
+                            <!-- 三本線の画像 -->
+                            <!-- <td class="handle"><img src="img/drugBottun.png"></td> -->
+                            <!-- 小節番号 -->
+                            <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="textValue"></td>
+                            <!-- 音符の種類と拍数 -->
+                            <td name="beatInfo">
+                                <select name="notesType">
+                                    <option value="4" selected>四分音符</option>
+                                    <option value="8">八分音符</option>
+                                    <option value="16">十六分音符</option>
+                                    <option value="6">四分三連符</option>
+                                    <option value="12">八分三連符</option>
+                                </select>
+                                で
+                                <input type="number" value=1 placeholder="拍数" name="beatNum" class="textValue">
+                                拍目
+                            </td>
+                            <td name="BPMInfo"><input type="number" value=150 placeholder="BPM" name="BPM" class="textValue"></td>
+                            <!-- マイナスボタンの画像 -->
+                            <td class="MinusBtn"><img src="img/rawMinus.png"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <img class="PlusBtn" src="img/rawPlus.png">
+            </div>
         </div>
-
-        <h4>HS変更操作</h4>
-        <div class="tableBg">
-            <table class="table tablesorter-bootstrap table-management" id="operationTable">
-                <thead>
-                    <tr class="nodrop nodrag">
-                        <th style="width: 5%;"></th>
-                        <th style="width: 10%;">小節数</th>
-                        <th style="width: 30%;">拍数</th>
-                        <th style="width: 30%;">操作</th>
-                        <th style="width: 20%;">備考</th>
-                        <th style="width: 5%;"></th>
-                    </tr>
-                </thead>
-                <tbody class="tableBody" id="operationTableBody">
-                    <tr class="table_fhs">
-                        <!-- 三本線の画像 -->
-                        <td class="handle"><img src="img/drugBottun.png"></td>
-                        <!-- 小節番号 -->
-                        <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="textValue"></td>
-                        <!-- 音符の種類と拍数 -->
-                        <td name="beatInfo">
-                            <select name="notesType">
-                                <option value="4" selected>四分音符</option>
-                                <option value="8">八分音符</option>
-                                <option value="16">十六分音符</option>
-                                <option value="12">四分三連符</option>
-                                <option value="24">八分三連符</option>
-                            </select>
-                            で
-                            <input type="number" value=1 placeholder="拍数" name="beatNum" class="textValue">
-                            拍目
-                        </td>
-                        <!-- 操作の種類 -->
-                        <td name="operation">
-                            <select name="opType">
-                                <option value="hs_down" selected>白鍵盤</option>
-                                <option value="hs_up">黒鍵盤</option>
-                                <option value="sud_off" >Sud+外し</option>
-                                <option value="sud_on" >Sud+付け</option>
-                                <option value="turntable" >ターンテーブル</option>
-                                <!-- <option value="sud_up" >Sud+上げ</option>
-                                <option value="sud_down" >Sud+下げ</option>
-                                <option value="lift_up" >Lift上げ</option>
-                                <option value="lift_down">Lift下げ</option> -->
-                                <option value="hstype_change">HS切替</option>
-                            </select>
-                            <input type="number" value=0 name="operationValue" class="textValue">
-                            <span class="smallNotes" name="textSarachon">(皿チョン)</span>
-                        </td>
-                        <!-- 備考欄 -->
-                        <td><input type="text"></td>
-                        <!-- マイナスボタンの画像 -->
-                        <td class="MinusBtn"><img src="img/rawMinus.png"></td>
-                    </tr>
-                </tbody>
-            </table>
-            <img class="PlusBtn" src="img/rawPlus.png">
-        </div>
-
-        <h4>開始時設定</h4>
-        <div class="initSetting">
-            <table class="initSetting tableBg", id="initTable">
+        <br>
+        <div class="postIt speed">
+            <h4>HS変更操作</h4>
+            <div class="tableBg">
+                <table class="table tablesorter-bootstrap table-sm table-arr" id="operationTable">
+                    <thead class="table-dark">
+                        <tr class="nodrop nodrag">
+                            <!-- <th style="width: 5%;"></th> -->
+                            <th style="width: 10%;">小節数</th>
+                            <th style="width: 30%;">拍数</th>
+                            <th style="width: 30%;">操作</th>
+                            <th style="width: 25%;">備考</th>
+                            <th style="width: 5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="tableBody" id="operationTableBody">
+                        <tr class="table_fhs">
+                            <!-- 三本線の画像 -->
+                            <!-- <td class="handle"><img src="img/drugBottun.png"></td> -->
+                            <!-- 小節番号 -->
+                            <td name="barInfo"><input type="number" value=1 placeholder="小節数" name="barNum" class="textValue"></td>
+                            <!-- 音符の種類と拍数 -->
+                            <td name="beatInfo">
+                                <select name="notesType">
+                                    <option value="4" selected>四分音符</option>
+                                    <option value="8">八分音符</option>
+                                    <option value="16">十六分音符</option>
+                                    <option value="12">四分三連符</option>
+                                    <option value="24">八分三連符</option>
+                                </select>
+                                で
+                                <input type="number" value=1 placeholder="拍数" name="beatNum" class="textValue">
+                                拍目
+                            </td>
+                            <!-- 操作の種類 -->
+                            <td name="operation">
+                                <select name="opType">
+                                    <option value="hs_down" selected>白鍵盤</option>
+                                    <option value="hs_up">黒鍵盤</option>
+                                    <option value="sud_off" >Sud+外し</option>
+                                    <option value="sud_on" >Sud+付け</option>
+                                    <option value="turntable" >ターンテーブル</option>
+                                    <!-- <option value="sud_up" >Sud+上げ</option>
+                                    <option value="sud_down" >Sud+下げ</option>
+                                    <option value="lift_up" >Lift上げ</option>
+                                    <option value="lift_down">Lift下げ</option> -->
+                                    <option value="hstype_change">HS切替</option>
+                                </select>
+                                <input type="number" value=0 name="operationValue" class="textValue">
+                                <span class="smallNotes" name="textSarachon">(皿チョン)</span>
+                            </td>
+                            <!-- 備考欄 -->
+                            <td><input type="text"></td>
+                            <!-- マイナスボタンの画像 -->
+                            <td class="MinusBtn"><img src="img/rawMinus.png"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <img class="PlusBtn" src="img/rawPlus.png">
+            </div><br>
+            <h4>開始時設定</h4>
+            <div class="initSetting">
+            <table class="initSetting", id="initTable">
                 <tbody>
                     <tr>
                         <td>
@@ -135,12 +143,13 @@
                         </td>
                         <td>
                             <label><input type="checkbox" id="hasSud"> sud+
-                             : <input type="number" id="opSud" step=1 class="textValue" placeholder=0 disabled="disabled"><br>
+                                : <input type="number" id="opSud" step=1 class="textValue" placeholder=0 disabled="disabled"><br>
                             <label><input type="checkbox" id="hasLift"> LIFT
-                             : <input type="number" id="opLift" step=1 class="textValue" placeholder=0 disabled="disabled"></label><br>
+                                : <input type="number" id="opLift" step=1 class="textValue" placeholder=0 disabled="disabled"></label><br>
                         </td>
                     </tr>
-            </table>
+                </table>
+            </div>
         </div>
 
         <div class="graph" id="bpm"></div>
