@@ -1,8 +1,11 @@
 body {
 	background-color:rgb(228, 228, 228);
 }
+* {
+	box-sizing: border-box;
+}
 .myheader {
-	background-color: rgb(0, 0, 0);
+	background-color: rgb(23, 23, 23);
 	display: flex;
 	width: 100%;
 	height: 60px;
@@ -13,6 +16,11 @@ body {
 	color:whitesmoke;
 	align-items: center;
   }
+.mainContents{
+	margin: 0 auto;
+	padding-left: 5px;
+	width: fit-content;
+}
 .handle{
 	cursor: move;
 	position: relative;
@@ -53,12 +61,13 @@ body {
 	font-size: 0.7em;
 }
 .postIt{
-	width: 1040px;
-	box-sizing: border-box;
+	width: fit-content;
 	padding: 10px;
 	padding-top: 5px;
-	margin-left: 10px;
-	background-color: rgb(246, 246, 246);
+	padding-left: 5px;
+	/* margin-left: 10px; */
+	margin-top: 10px;
+	background-color: rgb(239, 239, 239);
 }
 .postIt.bpm{
 	border-left: 5px solid #ea5550;
@@ -66,36 +75,100 @@ body {
 .postIt.speed{
 	border-left: 5px solid #37a34a;
 }
+.postIt.graphArea{
+	border-left: 5px solid #767676;
+	width: 100%;
+}
 .tableBg{
-	width: 1000px;
+	width: 850px;
 	height: 200px;
-	position: relative;
+	/* position: relative; */
 	left: 1%;
 	overflow: auto;
 	background-color: rgb(255, 255, 255);
 	border-radius: 3px;
-	scrollbar-color: #d4aa70 #e4e4e4;
+	scrollbar-color: #d47070 #e4e4e4;
 	scrollbar-width: thin;
 }
 .table_fhs{
-	background-color: skyblue;
+	background-color: rgb(231, 247, 253);
 }
 .table_chs{
-	background-color: bisque;
+	background-color: rgb(255, 238, 218);
 }
-/* .tableArr{ */
+.initSettingBg
+{
+	width: 100%;
+	left: 1%;
+	padding-bottom: 10px;
+}
+.initSetting{
+	width: 300px;
+}
+.table-arr{
+	width: 100%;
 	/* min-height: 400px; */
 	/* width: 1000px; */
-/* } */
+}
 .graph{
 	height: 200px;
+	padding-top: 10px;
+}
+.c3-axis-y text 
+{
+	font-size: 12px;
+}
+.c3-axis-x text
+{
+	font-size: 12px;
+}
+.c3-line
+{
+	stroke-width: 3px !important; 
 }
 table th,table td{
 	text-align: left;
 	vertical-align: middle;
-	/* padding: 15px 0; */
 }
-/* table th{
-	background: rgb(95, 95, 95);
-	color: rgb(240, 240, 240);
-} */
+.optionalCol {
+	/* visibility: collapse; */
+	display: none;
+}
+.barCol {
+	width: 10%;
+}
+.beatCol {
+	width: 0%;
+}
+.bpmCol {
+	width: 85%;
+}
+.iconCol {
+	width: 5%;
+}
+.operationCol {
+	width: 60%;
+}
+.memoCol {
+	width: 25%;
+}
+@media (600px <= width) {
+	.optionalCol {
+		display: table-cell;
+	}
+	.barCol {
+		width: 10%;
+	}
+	.beatCol {
+		width: 30%;
+	}
+	.bpmCol {
+		width: 55%;
+	}
+	.operationCol {
+		width: 30%;
+	}
+	.memoCol {
+		width: 25%;
+	}
+}

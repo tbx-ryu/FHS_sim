@@ -173,6 +173,9 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 x: "x",
                 value: [useDataset.yAxisKey],
             },
+            colors: {
+                [useDataset.yAxisKey]: [useDataset.color],
+            },
             types: {
                 [useDataset.yAxisKey]: "step"
             },
@@ -182,11 +185,36 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 type: "step-after",
             },
         },
+        legend: {
+            show: false,
+        },
         axis: {
             x: {
-                min: 2,
+                min: 1,
+                padding: {
+                    left: 0,
+                    // right: 0,
+                },
                 tick: {
-                    values: range(0, 100),
+                    values: range(0, 100), // TODO 入力値を拾う
+                    format: d3.format(".0f")
+                },
+                label: {
+                    text: "小節数",
+                }
+            },
+            y: {
+                min: useDataset["ymin"], // TODO 入力値を拾う
+                max: useDataset["ymax"], // TODO 入力値を拾う
+                padding: {
+                    bottom: 0,
+                    top: 10,
+                },
+                tick: {
+                    format: d3.format(".0f"),
+                },
+                label: {
+                    text: useDataset["label"],
                 }
             }
         }
@@ -389,8 +417,8 @@ $(function(){
 // 表示された画像をクリックし，設定を変更できること
 
 var bpmChart, speedsChart;
-var useDatasetBPM = {label: "BPM", yAxisKey: "bpm", color: "#ff5c5c"};
-var useDatasetSpeed = {label: "緑数字", yAxisKey: "midori", color: "#7fff7a"};
+var useDatasetBPM = {label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400}; //TODO useDatasetを更新できるようにする
+var useDatasetSpeed = {label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400};
 const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
 const initTable = document.getElementById("initTable");
