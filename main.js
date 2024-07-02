@@ -193,7 +193,7 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 min: 1,
                 padding: {
                     left: 0,
-                    // right: 0,
+                    right: 2,
                 },
                 tick: {
                     values: range(0, 100), // TODO 入力値を拾う
