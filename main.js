@@ -33,8 +33,6 @@ function getBPMdataset() {
 function getHSdataset(arrBPM) {
     let arrHS = [];
     arrHS.push(getInitialSetting(arrBPM[0].bpm));
-    let sudInit = arrHS[0]["hasSud"];
-    let hasLift = arrHS[0]["hasLift"];
     let table = document.getElementById('operationTable');
     for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header and footer(img of +)
         let row, barNum, notesType, beatNum, operation;
@@ -129,11 +127,11 @@ function calcOperation(x, prevArr, arrBPM, op) {
                 curArr["sud"] += parseInt(op["opValue"]);
                 curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 curArr["midori"] = curArr["memMidori"];
-            } else if (curArr["hasLift"] == true && op["sudInit"] == false) {
+            } else if (curArr["hasLift"] == true && curArr["sudInit"] == false) {
                 curArr["lift"] += parseInt(op["opValue"]);
                 curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 curArr["midori"] = curArr["memMidori"];
-            } else if (op["sudInit"] == true) {
+            } else if (curArr["sudInit"] == true) {
                 curArr["lift"] += parseInt(op["opValue"]);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
             } else {
@@ -349,20 +347,21 @@ function range(start, stop, step=10) {
 }
 
 function updateDatasetSetting(useDataset, padding=10) {
-    let datasets = useDataset["yAxisKey"] == "bpm" ? getBPMdataset() : getHSdataset(getBPMdataset());
+    let axKey = useDataset["yAxisKey"];
+    let datasets = axKey == "bpm" ? getBPMdataset() : getHSdataset(getBPMdataset());
     let xminU = document.getElementById("xmin").value;
     let xmaxU = document.getElementById("xmax").value;
-    let yminU = document.getElementById(useDataset["yAxisKey"]+"min").value;
-    let ymaxU = document.getElementById(useDataset["yAxisKey"]+"max").value;
-    let xmin = parseInt(datasets[0]["x"]);
-    let xmax = parseInt(datasets[0]["x"]);
-    let ymin = parseInt(datasets[0][useDataset["yAxisKey"]]) - padding;
-    let ymax = parseInt(datasets[0][useDataset["yAxisKey"]]) + padding ;
+    let yminU = document.getElementById(axKey+"min").value;
+    let ymaxU = document.getElementById(axKey+"max").value;
+    useDataset["xmin"] = parseInt(datasets[0]["x"]);
+    useDataset["xmax"] = parseInt(datasets[0]["x"]);
+    useDataset["ymin"] = parseInt(datasets[0][axKey]) - padding;
+    useDataset["ymax"] = parseInt(datasets[0][axKey]) + padding ;
     for (data of datasets) {
-        useDataset["xmin"] = xminU == "" ? Math.min(xmin, data["x"]) : parseInt(xminU);
-        useDataset["xmax"] = xmaxU == "" ? Math.max(xmax, data["x"]) : parseInt(xmaxU);
-        useDataset["ymin"] = yminU == "" ? Math.min(ymin, parseInt(data[useDataset["yAxisKey"]])-padding) : parseInt(yminU);
-        useDataset["ymax"] = ymaxU == "" ? Math.max(ymax, parseInt(data[useDataset["yAxisKey"]])+padding) : parseInt(ymaxU);
+        useDataset["xmin"] = xminU == "" ? Math.min(useDataset["xmin"], data["x"]) : parseInt(xminU);
+        useDataset["xmax"] = xmaxU == "" ? Math.max(useDataset["xmax"], data["x"]) : parseInt(xmaxU);
+        useDataset["ymin"] = yminU == "" ? Math.min(useDataset["ymin"], parseInt(data[axKey])-padding) : parseInt(yminU);
+        useDataset["ymax"] = ymaxU == "" ? Math.max(useDataset["ymax"], parseInt(data[axKey])+padding) : parseInt(ymaxU);
     }
     useDataset["xmin"] = useDataset["xmin"] < 0 ? 0 : useDataset["xmin"];
     useDataset["ymin"] = useDataset["ymin"] < 0 ? 0 : useDataset["ymin"];
@@ -388,6 +387,7 @@ function paramsToUrl() {
     queryObj["init"] = Object.values(getInitialSetting(dataBPMChange[0]["bpm"])).join("s");
 
     const toUrlParams = new URLSearchParams(queryObj);
+    // TODO ここhttpなどクエリ以前を追加する
     document.getElementById("generatedUrl").value = replaceStrings(toUrlParams.toString());
 }
 
