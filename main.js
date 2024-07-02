@@ -193,7 +193,7 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 min: 1,
                 padding: {
                     left: 0,
-                    right: 2,
+                    right: 5,
                 },
                 tick: {
                     values: range(0, 100), // TODO 入力値を拾う
@@ -237,6 +237,8 @@ function updateCharts(charts, useDatasets) {
                 [useDataset.yAxisKey]: "step"
             },
         })
+        chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]})
+        chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]})
     }
 }
 
@@ -341,6 +343,27 @@ function range(start, stop, step=10) {
     return Array.from({ length: (stop - start) / step + 1}, (_, i) => start + i * step);
 }
 
+function updateDatasetSetting(useDataset, padding=10) {
+    let datasets = useDataset["yAxisKey"] == "bpm" ? getBPMdataset() : getHSdataset(getBPMdataset());
+    let xminU = document.getElementById("xmin").value;
+    let xmaxU = document.getElementById("xmax").value;
+    let yminU = document.getElementById(useDataset["yAxisKey"]+"min").value;
+    let ymaxU = document.getElementById(useDataset["yAxisKey"]+"max").value;
+    let xmin = parseInt(datasets[0]["x"]);
+    let xmax = parseInt(datasets[0]["x"]);
+    let ymin = parseInt(datasets[0][useDataset["yAxisKey"]]) - padding;
+    let ymax = parseInt(datasets[0][useDataset["yAxisKey"]]) + padding ;
+    for (data of datasets) {
+        useDataset["xmin"] = xminU == "" ? Math.min(xmin, data["x"]) : parseInt(xminU);
+        useDataset["xmax"] = xmaxU == "" ? Math.max(xmax, data["x"]) : parseInt(xmaxU);
+        useDataset["ymin"] = yminU == "" ? Math.min(ymin, parseInt(data[useDataset["yAxisKey"]])-padding) : parseInt(yminU);
+        useDataset["ymax"] = ymaxU == "" ? Math.max(ymax, parseInt(data[useDataset["yAxisKey"]])+padding) : parseInt(ymaxU);
+    }
+    useDataset["xmin"] = useDataset["xmin"] < 0 ? 0 : useDataset["xmin"];
+    useDataset["ymin"] = useDataset["ymin"] < 0 ? 0 : useDataset["ymin"];
+    return useDataset;
+}
+
 // jQuery
 $(function(){
     // プラスボタンクリック時
@@ -355,7 +378,7 @@ $(function(){
         sortTable("operationTable");
         sortTable("bpmTable");
         checkOperations();
-        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);
+        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
     });
     // マイナスボタンクリック時
     $(".MinusBtn").on('click',function(){
@@ -365,7 +388,7 @@ $(function(){
             sortTable("operationTable");
             sortTable("bpmTable");
             checkOperations();
-            updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);
+            updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
         }
     });
 // 
@@ -417,26 +440,29 @@ $(function(){
 // 表示された画像をクリックし，設定を変更できること
 
 var bpmChart, speedsChart;
-var useDatasetBPM = {label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400}; //TODO useDatasetを更新できるようにする
-var useDatasetSpeed = {label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400};
 const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
 const initTable = document.getElementById("initTable");
+const graphSettingTable = document.getElementById("graphSetting");
 // let changeOperationBottun = document.getElementsByName("changeOperation")
 let dataBPMChange = getBPMdataset();
 let dataHSChange = getHSdataset(dataBPMChange);
+// データセット設定の更新
+var useDatasetBPM = updateDatasetSetting({label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400, xmin: 0, xmax: 100});
+var useDatasetSpeed = updateDatasetSetting({label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400, xmin: 0, xmax: 0});
+
 // TODO: 描画するデータセットをチェックボックスで指定できるようにする
 checkOperations();
 sortTable("operationTable");
 sortTable("bpmTable");
 bpmChart = drawChart(dataBPMChange, canvasID="bpm", useDataset=useDatasetBPM, update=false);
-speedChart = drawChart([{x:1, midori:290}, {x:20, midori:300}, {x:100, midori:280}], canvasID="speed", useDataset=useDatasetSpeed, update=false);
+speedChart = drawChart(dataHSChange, canvasID="speed", useDataset=useDatasetSpeed, update=false);
 bpmTable.addEventListener(
     "change",
     function () {
         sortTable("operationTable");
         sortTable("bpmTable");
-        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);}
+        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
     );
 operationTable.addEventListener(
     "change",
@@ -444,11 +470,16 @@ operationTable.addEventListener(
         sortTable("operationTable");
         sortTable("bpmTable");
         checkOperations();
-        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);}
+        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
     );
 initTable.addEventListener(
     "change",
     function() {
         checkOperations();
-        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed]);}
+        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
+    );
+graphSettingTable.addEventListener(
+    "change",
+    function() {
+        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
     );

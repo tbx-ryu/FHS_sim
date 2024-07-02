@@ -32,6 +32,11 @@
             </div>
 
             <div class="mainContents">
+                <div class="postIt info">
+                    <h4>曲情報</h4>
+                    <p><input type="text" placeholder="曲タイトル" id="musicTitle" class="infoTitle"></pF>
+                    <button name="genUrl">URL生成</button><input type="text" placeholder="URL" id="musicMemo" class="infoMemo">
+                </div>
                 <div class="postIt bpm">
                     <h4>BPM変化</h4>
                     <div class="tableBg">
@@ -157,6 +162,43 @@
                 </div>
 
                 <div class="postIt graphArea">
+                    <h4>グラフおよびグラフ設定</h4>
+                    <div class="initSettingBg">
+                        <table class="initSetting", id="graphSetting">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        X軸（小節数）範囲 : 
+                                    </td>
+                                    <td>
+                                        <input type="number" value="" placeholder="下限" id="xmin" class="textValue">
+                                        ~
+                                        <input type="number" value="" placeholder="上限" id="xmax" class="textValue">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Y軸（BPM）範囲 : 
+                                    </td>
+                                    <td>
+                                        <input type="number" value="" placeholder="下限" id="bpmmin" class="textValue">
+                                        ~
+                                        <input type="number" value="" placeholder="上限" id="bpmmax" class="textValue">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Y軸（緑数字）範囲 : 
+                                    </td>
+                                    <td>
+                                        <input type="number" value="" placeholder="下限" id="midorimin" class="textValue">
+                                        ~
+                                        <input type="number" value="" placeholder="上限" id="midorimax" class="textValue">
+                                    </td>
+                                </tr>
+                        </table>
+                    </div>
+
                     <div class="graph" id="bpm"></div>
                     <div class="graph" id="speed"></div>
                 </div>
