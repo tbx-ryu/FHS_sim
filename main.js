@@ -73,8 +73,8 @@ function calcTiming(barNum, notesType, beatNum) {
     return barNum + 1 / notesType * (beatNum - 1)
 }
 
-function getInitialSetting(iniBPM) {
-    let sud, lift, hid, midori, hs;
+function getInitialSetting(iniBPM, getRawSetting=false) {
+    let sud, lift, hid, midori, hs, isFHS;
     let hasSud = document.getElementById('hasSud').checked;
     let hasLift = document.getElementById('hasLift').checked;
     // let hasHid = document.getElementById('hasHid').checked;
@@ -87,7 +87,8 @@ function getInitialSetting(iniBPM) {
         sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
         lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
         hid = hasHid? parseInt(document.getElementById('opHid').value) : 0;
-        if(document.getElementsByName('isFHS')[0].checked) {
+        isFHS = document.getElementsByName('isFHS')[0].checked;
+        if(isFHS) {
             midori = parseInt(document.getElementById('opMidori').value);
             hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         } else {
@@ -95,7 +96,11 @@ function getInitialSetting(iniBPM) {
             midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         }
     }
-    return {x: 1, midori: midori, memMidori:midori, sud: sud, lift: lift, hid: hid, hs: hs, hasSud: hasSud, sudInit: hasSud, hasLift: hasLift};
+    if (getRawSetting) {
+        return {isFHS: isFHS, midori: midori, hs: hs, hasSud: hasSud, hasLift: hasLift, hasHid: hasHid, sud: sud, lift: lift, hid: hid}
+    } else {
+        return {x: 1, midori: midori, memMidori:midori, sud: sud, lift: lift, hid: hid, hs: hs, hasSud: hasSud, sudInit: hasSud, hasLift: hasLift};
+    }
 }
 
 function calcOperation(x, prevArr, arrBPM, op) {
@@ -364,6 +369,39 @@ function updateDatasetSetting(useDataset, padding=10) {
     return useDataset;
 }
 
+function urlToParams(url="") {
+    const params = new URLSearchParams(url);
+}
+
+function paramsToUrl() {
+    let queryObj = {};
+    let dataBPMChange = getBPMdataset();
+    let dataHSChange = getHSdataset(dataBPMChange);
+    
+    // music info
+    queryObj["title"] = document.getElementById("musicTitle").value;
+    // bpm
+    queryObj["bpm"] = dataBPMChange.map((bar) => Object.values(bar).join("s")).join("r");
+    // operation
+    queryObj["op"] = dataHSChange.map((bar) => Object.values(bar).join("s")).join("r");
+    // init setting
+    queryObj["init"] = Object.values(getInitialSetting(dataBPMChange[0]["bpm"])).join("s");
+
+    const toUrlParams = new URLSearchParams(queryObj);
+    document.getElementById("generatedUrl").value = replaceStrings(toUrlParams.toString());
+}
+
+function replaceStrings(myStr) {
+    return (myStr.replaceAll("false", "f")
+                 .replaceAll("true", "t"))
+}
+// ページ読み込み時
+    // URLパラメータをGETする
+    // 　→TITLE, HSCHANGE, BPMCHANGEなどの連想配列，あるものだけSETする
+// URL生成時
+    // パラメータへ変換し，生成
+
+
 // jQuery
 $(function(){
     // プラスボタンクリック時
@@ -391,10 +429,7 @@ $(function(){
             updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
         }
     });
-// 
-// 
-//  開始時設定を，ページ読み込み時に更新する（非活性化や初期値の自動入力など）
-//     
+    $("#genUrl").on("click", paramsToUrl)
     function switchEnableByCheck(checkId, opId) {
         if ($("#"+checkId).prop("checked") == false) {
             $("#"+opId).attr({disabled:"disabled", "placeholder":0});
