@@ -37,7 +37,31 @@ body {
 	margin: 0 auto;
 	padding: 0 5px 0 5px;
 	width: 100%;
-	max-width: 850px;
+	max-width: 1200px;
+}
+.mainContents {
+	display: grid;
+	grid-auto-flow: row;
+	grid-template-columns: 100%;
+	grid-template-rows: repeat(4, max-content);
+	grid-template-areas: 
+		"info"
+		"bpm"
+		"midori"
+		"graph";
+	gap: 10px;
+}
+.flexWrap {
+	display: flex;
+}
+.infoTitle {
+	width: 100%;
+}
+.infoUrl {
+	width: 100%;
+}
+.genUrlButton {
+	width: 6rem;
 }
 .handle{
 	cursor: move;
@@ -80,23 +104,25 @@ body {
 }
 .postIt{
 	width: 100%;
-	padding: 10px;
-	padding-top: 5px;
-	padding-left: 5px;
+	padding: 5px;
 	/* margin-left: 10px; */
-	margin-bottom: 10px;
+	/* margin-bottom: 10px; */
 	background-color: rgb(239, 239, 239);
 }
 .postIt.info{
+	grid-area: info;
 	border-left: 5px solid #767676;
 }
 .postIt.bpm{
+	grid-area: bpm;
 	border-left: 5px solid #ea5550;
 }
 .postIt.speed{
+	grid-area: midori;
 	border-left: 5px solid #37a34a;
 }
 .postIt.graphArea{
+	grid-area: graph;
 	border-left: 5px solid #767676;
 	width: 100%;
 }
@@ -196,7 +222,16 @@ table th,table td{
 	.initSettingLabel {
 		width: 80px;
 	}
-	.optionalCol {
+	.mainContents {
+		grid-template-columns: 30% 70%;
+		grid-template-rows: max-content, max-content, max-content;
+		grid-template-areas: 
+			"info midori"
+			"bpm midori"
+			"graph graph";
+		gap: 10px;
+	}
+	/* .optionalCol {
 		display: table-cell;
 	}
 	.barCol {
@@ -213,5 +248,5 @@ table th,table td{
 	}
 	.memoCol {
 		width: 25%;
-	}
+	} */
 }
