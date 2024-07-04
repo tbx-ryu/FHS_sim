@@ -1,7 +1,3 @@
-function updateGraph(chart, dataUpdated) {
-    chart.update(dataUpdated) //TODO
-}
-
 function getBPMdataset() {
     let arrBPM = [];
     let table = document.getElementById('bpmTable');
@@ -13,7 +9,7 @@ function getBPMdataset() {
             row.cells["beatInfo"].children["notesType"].value = 4;
             row.cells["beatInfo"].children["beatNum"].value = 1;
         }
-        barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
+        barNum = parseFloat(row.cells["barInfo"].children["barNum"].value);
         notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
         beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
         bpm = parseInt(row.cells["BPMInfo"].children["BPM"].value)
@@ -30,14 +26,15 @@ function getBPMdataset() {
     // TODO: 100をbarmaxに変える, barmaxがすべてのXより大きいことを保証する
     return arrBPM;
 }
-function getHSdataset(arrBPM) {
+function getHSdataset(arrBPM, getRaw=false) {
     let arrHS = [];
+    let arrRaw = [];
     arrHS.push(getInitialSetting(arrBPM[0].bpm));
     let table = document.getElementById('operationTable');
     for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header and footer(img of +)
         let row, barNum, notesType, beatNum, operation;
         row = table.rows[rowNum]
-        barNum = parseInt(row.cells["barInfo"].children["barNum"].value);
+        barNum = parseFloat(row.cells["barInfo"].children["barNum"].value);
         notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
         beatNum = parseInt(row.cells["beatInfo"].children["beatNum"].value);
         // operation = "hoge"; //parseInt(row.cells["BPMInfo"].children["BPM"].value);
@@ -46,7 +43,14 @@ function getHSdataset(arrBPM) {
                      opValue: row.cells["operation"].children["operationValue"].value}
         if(barNum && notesType && beatNum) {
             arrHS.push(calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], arrBPM, operation));
+            if (getRaw) {
+                operation["x"] = calcTiming(barNum, notesType, beatNum);
+                arrRaw.push(operation)
+            }
         }
+    }
+    if (getRaw) {
+        return arrRaw;
     }
     for (let arrBPMr of arrBPM.slice(1, -1)) {
         let arrAdd = arrBPMr["x"] == 1 ?
@@ -71,7 +75,7 @@ function calcTiming(barNum, notesType, beatNum) {
     return barNum + 1 / notesType * (beatNum - 1)
 }
 
-function getInitialSetting(iniBPM, getRawSetting=false) {
+function getInitialSetting(iniBPM, getRaw=false) {
     let sud, lift, hid, midori, hs, isFHS;
     let hasSud = document.getElementById('hasSud').checked;
     let hasLift = document.getElementById('hasLift').checked;
@@ -94,7 +98,7 @@ function getInitialSetting(iniBPM, getRawSetting=false) {
             midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         }
     }
-    if (getRawSetting) {
+    if (getRaw) {
         return {isFHS: isFHS, midori: midori, hs: hs, hasSud: hasSud, hasLift: hasLift, hasHid: hasHid, sud: sud, lift: lift, hid: hid}
     } else {
         return {x: 1, midori: midori, memMidori:midori, sud: sud, lift: lift, hid: hid, hs: hs, hasSud: hasSud, sudInit: hasSud, hasLift: hasLift};
@@ -304,7 +308,7 @@ function sortTable(tableId) {
     let cellVals = new Array();
 
     for (nRow = 0; nRow < oldTrs.length; nRow++) { // skip footer (img of +)
-        barNum = parseInt(oldTable.rows[nRow+1].cells["barInfo"].children["barNum"].value);
+        barNum = parseFloat(oldTable.rows[nRow+1].cells["barInfo"].children["barNum"].value);
         notesType = parseInt(oldTable.rows[nRow+1].cells["beatInfo"].children["notesType"].value);
         beatNum = parseInt(oldTable.rows[nRow+1].cells["beatInfo"].children["beatNum"].value);
         newIdxs[nRow] = {
@@ -368,39 +372,99 @@ function updateDatasetSetting(useDataset, padding=10) {
     return useDataset;
 }
 
-function urlToParams(url="") {
-    const params = new URLSearchParams(url);
+function urlToParams() {
+    const params = new URLSearchParams(window.location.search);
+    let title, arrBPM, arrOP, rowInit;
+    title = params.get("title");
+    arrBPM = strToObj(params, "bpm");
+    arrOP = strToObj(params, "op");
+    rowInit = strToObj(params, "init")[0];
+    
+    // set params from array
+    $("#musicTitle").attr("value", title)
+    for (let rowBPM of arrBPM.slice(0, -1)) { // グラフ描画用にx=100があるため，スキップ
+        $("#bpmTable").find("tbody tr:last-child input[name='barNum']").val(rowBPM["x"]);
+        $("#bpmTable").find("tbody tr:last-child input[name='BPM']").val(rowBPM["bpm"]);
+        if ($("#bpmTable").find("tbody tr").length < arrBPM.length - 1) {
+            $("#bpmTable").find("tbody tr:last-child").clone(true).appendTo($("#bpmTable").find("tbody"));
+        }
+    }
+    for (let rowOP of arrOP) { // OPの方は，x=100がない
+        $("#operationTable").find("tbody tr:last-child input[name='barNum']").val(rowOP["x"]);
+        $("#operationTable").find("tbody tr:last-child select[name='opType']").val(replaceStrings(rowOP["opType"], reverse=true));
+        $("#operationTable").find("tbody tr:last-child input[name='operationValue']").val(rowOP["opValue"]);
+        if ($("#operationTable").find("tbody tr").length < arrOP.length - 1) {
+            $("#operationTable").find("tbody tr:last-child").clone(true).appendTo($("#operationTable").find("tbody"));
+        }
+    }
+    if (rowInit["isFHS"] == "t") {
+        $("#operationTable").find("input[name='isFHS']:eq(0)").prop("checked", true);
+    } else {
+        $("#operationTable").find("input[name='isFHS']:eq(1)").prop("checked", true);
+    }
+    $("#initTable").find("#opMidori").val(rowInit["midori"]);
+    $("#initTable").find("#opHS").val(rowInit["hs"]);
+    if (rowInit["hasSud"] == "te") {
+        $("#initTable").find("#hasSud").prop("checked", true);
+    }
+    $("#initTable").find("#opSud").val(rowInit["sud"]);
+    if (rowInit["hasLift"] == "te") {
+        $("#initTable").find("#hasLift").prop("checked", true);
+    }
+    $("#initTable").find("#opLift").val(rowInit["lift"]);
+    // {isFHS: isFHS, midori: midori, hs: hs, hasSud: hasSud, hasLift: hasLift, hasHid: hasHid, sud: sud, lift: lift, hid: hid}
+}
+
+function strToObj(params, paramkey) {
+    let row = {};
+    let arr = [];
+    for (strRow of params.get(paramkey).split("r")) {
+        row = {};
+        for ([strVal, strKey] of zip(strRow.split("s"), params.get(paramkey+"key").split("-"))) {
+            row[strKey] = strVal;
+        }
+        arr.push(row);
+    }
+    return arr;
 }
 
 function paramsToUrl() {
     let queryObj = {};
     let dataBPMChange = getBPMdataset();
-    let dataHSChange = getHSdataset(dataBPMChange);
+    let dataHSChange = getHSdataset(dataBPMChange, getRaw=true);
     
     // music info
     queryObj["title"] = document.getElementById("musicTitle").value;
     // bpm
+    queryObj["bpmkey"] = Object.keys(dataBPMChange[0]).join("-");
     queryObj["bpm"] = dataBPMChange.map((bar) => Object.values(bar).join("s")).join("r");
     // operation
+    queryObj["opkey"] = Object.keys(dataHSChange[0]).join("-");
     queryObj["op"] = dataHSChange.map((bar) => Object.values(bar).join("s")).join("r");
     // init setting
-    queryObj["init"] = Object.values(getInitialSetting(dataBPMChange[0]["bpm"])).join("s");
+    queryObj["initkey"] = Object.keys(getInitialSetting(dataBPMChange[0]["bpm"]), getRaw=true).join("-");
+    queryObj["init"] = Object.values(getInitialSetting(dataBPMChange[0]["bpm"]), getRaw=true).join("s");
 
     const toUrlParams = new URLSearchParams(queryObj);
     // TODO ここhttpなどクエリ以前を追加する
-    document.getElementById("generatedUrl").value = replaceStrings(toUrlParams.toString());
+    document.getElementById("generatedUrl").value = document.URL.split("?")[0] + "?" + replaceStrings(toUrlParams.toString());
 }
 
-function replaceStrings(myStr) {
-    return (myStr.replaceAll("false", "f")
-                 .replaceAll("true", "t"))
+function replaceStrings(myStr, reverse=false) {
+    let full = ["false", "true", "table_fhs", "table_chs", "hs_down", "hs_up", "sud_off", "sud_on", "turntable", "hstype_change"];
+    let short = ["fa", "te", "t0", "t1", "o0", "o1", "o2", "o3", "o4", "o5"];
+    let src, dst;
+    if (!reverse) {
+        for ([src, dst] of zip(full, short)) {
+            myStr = myStr.replaceAll(src, dst)
+        }
+    } else {
+        for ([src, dst] of zip(short, full)) {
+            myStr = myStr.replaceAll(src, dst)
+        }
+    }
+    return myStr;    
 }
-// ページ読み込み時
-    // URLパラメータをGETする
-    // 　→TITLE, HSCHANGE, BPMCHANGEなどの連想配列，あるものだけSETする
-// URL生成時
-    // パラメータへ変換し，生成
-
 
 // jQuery
 $(function(){
@@ -470,10 +534,21 @@ $(function(){
     });
 })
 
+// ==================
+//    Main Process
+// ==================
+
 // TODO
 // 画像を表示し，ギアチェンイベントが有ることを表示する
 // 表示された画像をクリックし，設定を変更できること
 
+if (window.location.search != "") {
+    try {
+        urlToParams();
+    } catch (e) {
+        console.log("Failed to load URL Parameters.");
+    }
+}
 var bpmChart, speedsChart;
 const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
