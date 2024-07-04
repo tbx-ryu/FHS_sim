@@ -9,6 +9,8 @@ function getBPMdataset() {
             row.cells["barInfo"].children["barNum"].setAttribute("disabled", "disabled");
             row.cells["beatInfo"].children["notesType"].value = 4;
             row.cells["beatInfo"].children["beatNum"].value = 1;
+        } else {
+            row.cells["barInfo"].children["barNum"].removeAttribute("disabled");
         }
         barNum = parseFloat(row.cells["barInfo"].children["barNum"].value);
         notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
