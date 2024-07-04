@@ -6,6 +6,7 @@ function getBPMdataset() {
         row = table.rows[rowNum]
         if(rowNum == 1) {
             row.cells["barInfo"].children["barNum"].value = 1;
+            row.cells["barInfo"].children["barNum"].setAttribute("disabled", "disabled");
             row.cells["beatInfo"].children["notesType"].value = 4;
             row.cells["beatInfo"].children["beatNum"].value = 1;
         }
@@ -32,7 +33,7 @@ function getHSdataset(arrBPM, getRaw=false) {
     arrHS.push(getInitialSetting(arrBPM[0].bpm));
     let table = document.getElementById('operationTable');
     for (let rowNum = 1; rowNum < table.rows.length; rowNum++) { //skip header and footer(img of +)
-        let row, barNum, notesType, beatNum, operation;
+        let row, barNum, notesType, beatNum, operation, rowAdd;
         row = table.rows[rowNum]
         barNum = parseFloat(row.cells["barInfo"].children["barNum"].value);
         notesType = parseInt(row.cells["beatInfo"].children["notesType"].value);
@@ -41,14 +42,19 @@ function getHSdataset(arrBPM, getRaw=false) {
         operation = {hsType: row.className,
                      opType: row.cells["operation"].children["opType"].value,
                      opValue: row.cells["operation"].children["operationValue"].value}
-        if(barNum && notesType && beatNum) {
-            arrHS.push(calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], arrBPM, operation));
+        if(calcTiming(barNum, notesType, beatNum) > 0) {
+            rowAdd = calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], arrBPM, operation);
+            row.cells["memo"].children["memoVal"].placeholder = rowAdd["memo"]
+            arrHS.push(rowAdd);
             if (getRaw) {
                 operation["x"] = calcTiming(barNum, notesType, beatNum);
                 arrRaw.push(operation)
             }
         }
     }
+    arrHS.sort(function (a, b) {
+        return a.x - b.x;
+    })
     if (getRaw) {
         return arrRaw;
     }
@@ -61,10 +67,10 @@ function getHSdataset(arrBPM, getRaw=false) {
         arrAdd["x"] = arrBPMr["x"];
         arrAdd["midori"] = calcHS2Midori(arrAdd["hs"], arrAdd["sud"], arrAdd["lift"], arrAdd["hid"], arrAdd["hasSud"], arrAdd["hasLift"], arrBPMr["bpm"]);
         arrHS.push(arrAdd);
+        arrHS.sort(function (a, b) {
+            return a.x - b.x;
+        })
     }
-    arrHS.sort(function (a, b) {
-        return a.x - b.x;
-    })
     const lastHS = Object.assign({}, arrHS.slice(-1)[0]);
     lastHS.x = 100;
     arrHS.push(lastHS);
@@ -82,9 +88,10 @@ function getInitialSetting(iniBPM, getRaw=false) {
     // let hasHid = document.getElementById('hasHid').checked;
     let hasHid = false;
     if(!(hasSud || hasLift || hasHid)) {
-        hs = parseInt(document.getElementById('opHS').value);
+        hs = parseFloat(document.getElementById('opHS').value);
         [sud, lift, hid] = [0, 0, 0];
         midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
+        document.getElementById('opMidori').value = midori;
     } else {
         sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
         lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
@@ -93,9 +100,11 @@ function getInitialSetting(iniBPM, getRaw=false) {
         if(isFHS) {
             midori = parseInt(document.getElementById('opMidori').value);
             hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
+            document.getElementById('opHS').value = hs;
         } else {
-            hs = parseInt(document.getElementById('opHS').value);
+            hs = parseFloat(document.getElementById('opHS').value);
             midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
+            document.getElementById('opMidori').value = midori;
         }
     }
     if (getRaw) {
@@ -106,6 +115,7 @@ function getInitialSetting(iniBPM, getRaw=false) {
 }
 
 function calcOperation(x, prevArr, arrBPM, op) {
+    let memo;
     let bpm = x==1 ? arrBPM[0]["bpm"] : arrBPM.findLast(function (bpmInfo) {
                         return bpmInfo["x"] < x; 
                         })["bpm"];
@@ -116,14 +126,17 @@ function calcOperation(x, prevArr, arrBPM, op) {
         let hsChangeVal = (op["hsType"] == "table_fhs" && curArr["hasSud"]) ? 0.5 * parseInt(op["opValue"]) : 0.25 * parseInt(op["opValue"]);
         curArr["hs"] = op["opType"] == "hs_down" ? curArr["hs"] - hsChangeVal : curArr["hs"] + hsChangeVal;
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+        memo = generateMemo(["HS"], [prevArr["hs"]], [curArr["hs"]]);
     } else if (op["opType"] == "sud_off") {
         // サドプラ外し
         curArr["hasSud"] = false;
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+        memo = generateMemo(["sud"], [prevArr["sud"]], [0]);
     } else if (op["opType"] == "sud_on") {
         curArr["sudInit"] = true;
         curArr["hasSud"] = true;
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+        memo = generateMemo(["sud"], [0], [curArr["sud"]]);
     } else if (op["opType"] == "turntable"){
         // 皿回したとき
         if (op["hsType"] == "table_fhs") {
@@ -131,31 +144,54 @@ function calcOperation(x, prevArr, arrBPM, op) {
                 curArr["sud"] += parseInt(op["opValue"]);
                 curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 curArr["midori"] = curArr["memMidori"];
+                memo = generateMemo(["sud", "HS"], [prevArr["sud"], prevArr["hs"]], [curArr["sud"], curArr["hs"]]);
             } else if (curArr["hasLift"] == true && curArr["sudInit"] == false) {
                 curArr["lift"] += parseInt(op["opValue"]);
                 curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 curArr["midori"] = curArr["memMidori"];
+                memo = generateMemo(["Lift", "HS"], [prevArr["lift"], prevArr["hs"]], [curArr["lift"], curArr["hs"]]);
             } else if (curArr["sudInit"] == true) {
                 curArr["lift"] += parseInt(op["opValue"]);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+                memo = generateMemo(["Lift", "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
             } else {
                 curArr["hs"] += parseFloat(op["opValue"]);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+                memo = generateMemo(["HS", "緑数字"], [prevArr["hs"], prevArr["midori"]], [curArr["hs"], curArr["midori"]]);
             }
         } else {
             if (curArr["hasSud"] == true) {
                 op["sud"] += parseInt(op["opValue"]);
+                curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+                memo = generateMemo(["sud", "緑数字"], [prevArr["sud"], prevArr["midori"]], [curArr["sud"], curArr["midori"]]);
             } else if (curArr["hasLift"] == true) {
                 op["lift"] += parseInt(op["opValue"]);
+                curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+                memo = generateMemo(["Lift", "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
             } else {
                 console.log("nani mo nai");
+                memo = "No Changes";
             }
-            curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
         }
-    } else if (op["opType"] == "hstype_change" && op["hsType"] == "table_fhs") {
-        curArr["memMidori"] = curArr["midori"];
+    } else if (op["opType"] == "hstype_change") {
+        if (op["hsType"] == "table_fhs") {
+            curArr["memMidori"] = curArr["midori"];
+            memo = generateMemo(["HS種別"], ["CHS"], ["FHS"]);
+        } else {
+            memo = generateMemo(["HS種別"], ["FHS"], ["CHS"]);
+        }
     }
+    curArr["memo"] = memo;
     return curArr; 
+}
+
+function generateMemo(params, preVals, curVals) {
+    let memoArr = [];
+    let param, preVal, curVal;
+    for ([param, preVal, curVal] of zip(params, preVals, curVals)) {
+        memoArr.push(`${param}\u003A [${preVal} => ${curVal}]`);
+    }
+    return memoArr.join(",");
 }
 
 function calcHS2Midori(hs, sud, lift, hid, hasSud, hasLift, bpm, baseMidori=348000) {
@@ -466,6 +502,10 @@ function replaceStrings(myStr, reverse=false) {
     return myStr;    
 }
 
+function validateInputValue() {
+
+}
+
 // jQuery
 $(function(){
     // プラスボタンクリック時
@@ -496,9 +536,9 @@ $(function(){
     $("#genUrl").on("click", paramsToUrl)
     function switchEnableByCheck(checkId, opId) {
         if ($("#"+checkId).prop("checked") == false) {
-            $("#"+opId).attr({disabled:"disabled", "placeholder":0});
+            $("#"+opId).attr({disabled:"disabled"});
         } else {
-            $("#"+opId).removeAttr("disabled placeholder");
+            $("#"+opId).removeAttr("disabled");
         }
     };
     function switchEnableByRadio(radioName, opIdToEnable, opIdToDisable, otherCond=true) {
@@ -516,7 +556,7 @@ $(function(){
     // initialize
     switchEnableByCheck("hasSud", "opSud");
     switchEnableByCheck("hasLift", "opLift");
-    switchEnableByRadio("isFHS", "opMidori", "opHS", $("#hasSud").prop("checked")==true || $("#hasLift").prop("checked")==true);
+    switchEnableByRadio("isFHS", "opMidori", "opHS", isSudLiftChecked());
     // set event handler
     let evargs = {radioName: "isFHS",
                   opIdToE: "opMidori",
