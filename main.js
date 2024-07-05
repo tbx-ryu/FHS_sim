@@ -24,8 +24,9 @@ function getBPMdataset() {
     arrBPM.sort(function (a, b) {
         return a.x - b.x;
     });
-    // endの小節線情報も入れる
-    arrBPM.push({x: 100, bpm: arrBPM[arrBPM.length-1].bpm});
+    // endの小節線情報を追加
+    let xmax = document.getElementById("xmax").value == "" ? Math.max(100, arrBPM.slice(-1)[0]["x"]+10) : parseInt(document.getElementById("xmax").value);
+    arrBPM.push({x: xmax, bpm: arrBPM[arrBPM.length-1].bpm});
     // TODO: 100をbarmaxに変える, barmaxがすべてのXより大きいことを保証する
     return arrBPM;
 }
@@ -74,7 +75,7 @@ function getHSdataset(arrBPM, getRaw=false) {
         })
     }
     const lastHS = Object.assign({}, arrHS.slice(-1)[0]);
-    lastHS.x = 100;
+    lastHS.x = document.getElementById("xmax").value == "" ? Math.max(100, lastHS["x"]+10) : parseInt(document.getElementById("xmax").value);
     arrHS.push(lastHS);
     return arrHS;
 }
@@ -241,7 +242,7 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                     right: 5,
                 },
                 tick: {
-                    values: range(0, 100), // TODO 入力値を拾う
+                    values: range(0, (Math.ceil(useDataset["xmax"] / 10) + 1) * 10), // TODO 入力値を拾う
                     format: d3.format(".0f")
                 },
                 label: {
@@ -249,8 +250,8 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 }
             },
             y: {
-                min: useDataset["ymin"], // TODO 入力値を拾う
-                max: useDataset["ymax"], // TODO 入力値を拾う
+                min: useDataset["ymin"],
+                max: useDataset["ymax"],
                 padding: {
                     bottom: 0,
                     top: 10,
@@ -282,8 +283,10 @@ function updateCharts(charts, useDatasets) {
                 [useDataset.yAxisKey]: "step"
             },
         })
-        chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]})
-        chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]})
+        chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
+        chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
+        chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
+        chart.flush();
     }
 }
 
@@ -405,8 +408,8 @@ function updateDatasetSetting(useDataset, padding=10) {
         useDataset["ymin"] = yminU == "" ? Math.min(useDataset["ymin"], parseInt(data[axKey])-padding) : parseInt(yminU);
         useDataset["ymax"] = ymaxU == "" ? Math.max(useDataset["ymax"], parseInt(data[axKey])+padding) : parseInt(ymaxU);
     }
-    useDataset["xmin"] = useDataset["xmin"] < 0 ? 0 : useDataset["xmin"];
-    useDataset["ymin"] = useDataset["ymin"] < 0 ? 0 : useDataset["ymin"];
+    useDataset["xmin"] = useDataset["xmin"] < 1 ? 1 : useDataset["xmin"];
+    useDataset["ymin"] = useDataset["ymin"] < 1 ? 1 : useDataset["ymin"];
     return useDataset;
 }
 
@@ -591,17 +594,16 @@ if (window.location.search != "") {
         console.log("Failed to load URL Parameters.");
     }
 }
+// データセット設定の更新
+var useDatasetBPM = updateDatasetSetting({label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400, xmin: 0, xmax: 100});
+var useDatasetSpeed = updateDatasetSetting({label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400, xmin: 0, xmax: 0});
 var bpmChart, speedsChart;
 const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
 const initTable = document.getElementById("initTable");
 const graphSettingTable = document.getElementById("graphSetting");
-// let changeOperationBottun = document.getElementsByName("changeOperation")
 let dataBPMChange = getBPMdataset();
 let dataHSChange = getHSdataset(dataBPMChange);
-// データセット設定の更新
-var useDatasetBPM = updateDatasetSetting({label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400, xmin: 0, xmax: 100});
-var useDatasetSpeed = updateDatasetSetting({label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400, xmin: 0, xmax: 0});
 
 // TODO: 描画するデータセットをチェックボックスで指定できるようにする
 checkOperations();
