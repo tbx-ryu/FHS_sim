@@ -90,8 +90,14 @@ function getInitialSetting(iniBPM, getRaw=false) {
     let hasLift = document.getElementById('hasLift').checked;
     // let hasHid = document.getElementById('hasHid').checked;
     let hasHid = false;
+    isFHS = document.getElementsByName('isFHS')[0].checked;
     if(!(hasSud || hasLift || hasHid)) {
-        hs = parseFloat(document.getElementById('opHS').value);
+        if (isFHS) {
+            hs = parseFloat(document.getElementById('opHS').value)
+        } else {
+            hs = hsFix(parseFloat(document.getElementById('opHS').value));
+            document.getElementById("opHS").value = hs.toFixed(2);
+        }
         [sud, lift, hid] = [0, 0, 0];
         midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         document.getElementById('opMidori').value = parseInt(midori);
@@ -99,7 +105,6 @@ function getInitialSetting(iniBPM, getRaw=false) {
         sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
         lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
         hid = hasHid? parseInt(document.getElementById('opHid').value) : 0;
-        isFHS = document.getElementsByName('isFHS')[0].checked;
         if(isFHS) {
             midori = parseInt(document.getElementById('opMidori').value);
             hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
@@ -165,11 +170,11 @@ function calcOperation(x, prevArr, arrBPM, op) {
             }
         } else {
             if (curArr["hasSud"] == true) {
-                op["sud"] += parseInt(op["opValue"]);
+                curArr["sud"] += parseInt(op["opValue"]);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 memo = generateMemo(["sud", "緑数字"], [prevArr["sud"], prevArr["midori"]], [curArr["sud"], curArr["midori"]]);
             } else if (curArr["hasLift"] == true) {
-                op["lift"] += parseInt(op["opValue"]);
+                curArr["lift"] += parseInt(op["opValue"]);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 memo = generateMemo(["Lift", "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
             } else {
