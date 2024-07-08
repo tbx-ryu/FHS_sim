@@ -94,7 +94,7 @@ function getInitialSetting(iniBPM, getRaw=false) {
         hs = parseFloat(document.getElementById('opHS').value);
         [sud, lift, hid] = [0, 0, 0];
         midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
-        document.getElementById('opMidori').value = midori;
+        document.getElementById('opMidori').value = parseInt(midori);
     } else {
         sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
         lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
@@ -103,11 +103,12 @@ function getInitialSetting(iniBPM, getRaw=false) {
         if(isFHS) {
             midori = parseInt(document.getElementById('opMidori').value);
             hs = calcMidori2HS(midori=midori, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
-            document.getElementById('opHS').value = hs;
+            document.getElementById('opHS').value = hs.toFixed(2);
         } else {
-            hs = parseFloat(document.getElementById('opHS').value);
+            hs = hsFix(parseFloat(document.getElementById('opHS').value));
             midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
-            document.getElementById('opMidori').value = midori;
+            document.getElementById('opHS').value = hs.toFixed(2);
+            document.getElementById('opMidori').value = parseInt(midori);
         }
     }
     if (getRaw) {
@@ -181,7 +182,9 @@ function calcOperation(x, prevArr, arrBPM, op) {
             curArr["memMidori"] = curArr["midori"];
             memo = generateMemo(["HS種別"], ["CHS"], ["FHS"]);
         } else {
-            memo = generateMemo(["HS種別"], ["FHS"], ["CHS"]);
+            curArr["hs"] = hsFix(parseFloat(curArr["hs"]));
+            curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+            memo = generateMemo(["HS種別", "緑数字", "HS"], ["FHS", prevArr["midori"], prevArr["hs"]], ["CHS", curArr["midori"], curArr["hs"]]);
         }
     }
     curArr["memo"] = memo;
@@ -195,6 +198,10 @@ function generateMemo(params, preVals, curVals) {
         memoArr.push(`${param}\u003A [${preVal} => ${curVal}]`);
     }
     return memoArr.join(",");
+}
+
+function hsFix(hs) {
+    return Math.round(hs / 0.25) * 0.25;
 }
 
 function calcHS2Midori(hs, sud, lift, hid, hasSud, hasLift, bpm, baseMidori=348000) {
