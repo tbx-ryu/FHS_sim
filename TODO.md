@@ -12,7 +12,7 @@
  - [x] グラフ設定の追加
  - [x] タイトルおよび説明文の追加
  - [ ] 使い方説明ページの作成
- - [ ] IPAのセキュリティ対策フォロー<li ref=https://www.ipa.go.jp/security/vuln/websecurity/about.html>
+ - [x] IPAのセキュリティ対策フォロー<li ref=https://www.ipa.go.jp/security/vuln/websecurity/about.html>
 
 ### 優先度M
  - [ ] イメージの作成

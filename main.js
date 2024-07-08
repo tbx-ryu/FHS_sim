@@ -27,7 +27,6 @@ function getBPMdataset() {
     // endの小節線情報を追加
     let xmax = document.getElementById("xmax").value == "" ? Math.max(100, arrBPM.slice(-1)[0]["x"]+10) : parseInt(document.getElementById("xmax").value);
     arrBPM.push({x: xmax, bpm: arrBPM[arrBPM.length-1].bpm});
-    // TODO: 100をbarmaxに変える, barmaxがすべてのXより大きいことを保証する
     return arrBPM;
 }
 function getHSdataset(arrBPM, getRaw=false) {
@@ -254,7 +253,7 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                     right: 5,
                 },
                 tick: {
-                    values: range(0, (Math.ceil(useDataset["xmax"] / 10) + 1) * 10), // TODO 入力値を拾う
+                    values: range(0, (Math.ceil(useDataset["xmax"] / 10) + 1) * 10),
                     format: d3.format(".0f")
                 },
                 label: {
@@ -499,7 +498,6 @@ function paramsToUrl() {
     queryObj["init"] = Object.values(getInitialSetting(dataBPMChange[0]["bpm"]), getRaw=true).join("s");
 
     const toUrlParams = new URLSearchParams(queryObj);
-    // TODO ここhttpなどクエリ以前を追加する
     document.getElementById("generatedUrl").value = document.URL.split("?")[0] + "?" + replaceStrings(toUrlParams.toString());
 }
 
