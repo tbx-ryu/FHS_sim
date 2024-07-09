@@ -27,6 +27,9 @@ body {
 	color: whitesmoke;
 	padding-left: 5px;
 }
+.myfooter a {
+	color: whitesmoke;
+}
 .title {
 	font-size: 1.4rem;
 	margin: 0 auto;
@@ -111,15 +114,15 @@ body {
 }
 .postIt.info{
 	grid-area: info;
-	border-left: 5px solid #767676;
+	border-left: 5px solid rgb(118, 118, 118);
 }
 .postIt.bpm{
 	grid-area: bpm;
-	border-left: 5px solid #ea5550;
+	border-left: 5px solid rgb(234, 85, 80);
 }
 .postIt.speed{
 	grid-area: midori;
-	border-left: 5px solid #37a34a;
+	border-left: 5px solid rgb(55, 163, 74);
 }
 .postIt.graphArea{
 	grid-area: graph;
