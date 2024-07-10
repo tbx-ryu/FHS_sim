@@ -1,3 +1,12 @@
+function getDatasets() {
+    let arrBPM = getBPMdataset();
+    let arrHS = getHSdataset(arrBPM);
+    if (arrBPM.slice(-1)[0]["x"] < arrHS.slice(-1)[0]["x"]) {
+        arrBPM.slice(-1)[0]["x"] = arrHS.slice(-1)[0]["x"];
+    }
+    return [arrBPM, arrHS];
+}
+
 function getBPMdataset() {
     let arrBPM = [];
     let table = document.getElementById('bpmTable');
@@ -64,7 +73,7 @@ function getHSdataset(arrBPM, getRaw=false) {
         let arrAdd = arrBPMr["x"] == 1 ?
                         structuredClone(arrHS[0]) :
                         structuredClone(arrHS.findLast(function (arrHSr) {
-                                return arrHSr["x"] < arrBPMr["x"]; 
+                                return arrHSr["x"] <= arrBPMr["x"]; 
                             }));
         arrAdd["x"] = arrBPMr["x"];
         arrAdd["midori"] = calcHS2Midori(arrAdd["hs"], arrAdd["sud"], arrAdd["lift"], arrAdd["hid"], arrAdd["hasSud"], arrAdd["hasLift"], arrBPMr["bpm"]);
@@ -125,7 +134,7 @@ function getInitialSetting(iniBPM, getRaw=false) {
 function calcOperation(x, prevArr, arrBPM, op) {
     let memo;
     let bpm = x==1 ? arrBPM[0]["bpm"] : arrBPM.findLast(function (bpmInfo) {
-                        return bpmInfo["x"] < x; 
+                        return bpmInfo["x"] <= x; 
                         })["bpm"];
     let curArr = structuredClone(prevArr);
     curArr["x"] = x;
@@ -274,15 +283,15 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                     text: useDataset["label"],
                 }
             }
-        }
+        },
     });
     return chart;
 }
 
 function updateCharts(charts, useDatasets) {
-    let chart, useDataset, datasets;
-    let dataBPMChange = getBPMdataset();
-    let dataHSChange = getHSdataset(dataBPMChange);
+    let chart, useDataset, datasets, dataBPMChange, dataHSChange;
+    [dataBPMChange, dataHSChange] = getDatasets();
+    let dataOp = getHSdataset(dataBPMChange, getRaw=true);
     for ([chart, useDataset, datasets] of zip(charts, useDatasets, [dataBPMChange, dataHSChange])) {
         chart.load({
             json: datasets,
@@ -293,11 +302,23 @@ function updateCharts(charts, useDatasets) {
             types: {
                 [useDataset.yAxisKey]: "step"
             },
+            done: function() {
+                chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
+                chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
+                chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
+                chart.xgrids.remove();
+                for (let op of dataOp) {
+                        chart.xgrids.add([{value: parseFloat(op["x"]), text: (op["opType"] + "=" + op["opValue"])}])
+                    }
+                chart.flush();
+            }
         })
-        chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
-        chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
-        chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
-        chart.flush();
+            // let grids = [];
+            // for (let op of dataOp) {
+            //     grids.push({value: parseFloat(op["x"]), text: (op["opType"] + "=" + op["opValue"])})
+            // }
+            // chart.xgrids(grids);
+            // なんで縦線が一瞬出て消えるのかな…？
     }
 }
 
@@ -404,13 +425,15 @@ function range(start, stop, step=10) {
 
 function updateDatasetSetting(useDataset, padding=10) {
     let axKey = useDataset["yAxisKey"];
-    let datasets = axKey == "bpm" ? getBPMdataset() : getHSdataset(getBPMdataset());
+    let BPMdataset, HSdataset
+    [BPMdataset, HSdataset] = getDatasets();
+    let datasets = axKey == "bpm" ? BPMdataset : HSdataset;
     let xminU = document.getElementById("xmin").value;
     let xmaxU = document.getElementById("xmax").value;
     let yminU = document.getElementById(axKey+"min").value;
     let ymaxU = document.getElementById(axKey+"max").value;
-    useDataset["xmin"] = parseInt(datasets[0]["x"]);
-    useDataset["xmax"] = parseInt(datasets[0]["x"]);
+    useDataset["xmin"] = 1; // start ha itsumo 1
+    useDataset["xmax"] = Math.max(parseInt(BPMdataset.slice(-1)[0]["x"]), parseInt(HSdataset.slice(-1)[0]["x"]));
     useDataset["ymin"] = parseInt(datasets[0][axKey]) - padding;
     useDataset["ymax"] = parseInt(datasets[0][axKey]) + padding ;
     for (data of datasets) {
@@ -482,7 +505,7 @@ function strToObj(params, paramkey) {
 
 function paramsToUrl() {
     let queryObj = {};
-    let dataBPMChange = getBPMdataset();
+    let [dataBPMChange, _] = getDatasets();
     let dataHSChange = getHSdataset(dataBPMChange, getRaw=true);
     
     // music info
@@ -612,8 +635,7 @@ const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
 const initTable = document.getElementById("initTable");
 const graphSettingTable = document.getElementById("graphSetting");
-let dataBPMChange = getBPMdataset();
-let dataHSChange = getHSdataset(dataBPMChange);
+let [dataBPMChange, dataHSChange] = getDatasets();
 
 // TODO: 描画するデータセットをチェックボックスで指定できるようにする
 checkOperations();
@@ -621,6 +643,7 @@ sortTable("operationTable");
 sortTable("bpmTable");
 bpmChart = drawChart(dataBPMChange, canvasID="bpm", useDataset=useDatasetBPM, update=false);
 speedChart = drawChart(dataHSChange, canvasID="speed", useDataset=useDatasetSpeed, update=false);
+updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
 bpmTable.addEventListener(
     "change",
     function () {
