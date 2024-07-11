@@ -1,4 +1,4 @@
-var GRAPH_ANIME_TIME = 500; // msec
+var GRAPH_ANIME_TIME = 50; // msec
 
 function getDatasets() {
     let arrBPM = getBPMdataset();
