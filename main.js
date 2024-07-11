@@ -1,3 +1,5 @@
+var GRAPH_ANIME_TIME = 500; // msec
+
 function getDatasets() {
     let arrBPM = getBPMdataset();
     let arrHS = getHSdataset(arrBPM);
@@ -284,6 +286,9 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 }
             }
         },
+        transition: {
+            duration: GRAPH_ANIME_TIME,
+        }, 
     });
     return chart;
 }
@@ -302,24 +307,25 @@ function updateCharts(charts, useDatasets) {
             types: {
                 [useDataset.yAxisKey]: "step"
             },
-            done: function() {
-                chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
-                chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
-                chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
-                chart.xgrids.remove();
-                for (let op of dataOp) {
-                        chart.xgrids.add([{value: parseFloat(op["x"]), text: (op["opType"] + "=" + op["opValue"])}])
-                    }
-                chart.flush();
+            grids :{
+                x: {
+                    lines: [{value: 20, text: "hoge"}]
+                }
             }
         })
-            // let grids = [];
-            // for (let op of dataOp) {
-            //     grids.push({value: parseFloat(op["x"]), text: (op["opType"] + "=" + op["opValue"])})
-            // }
-            // chart.xgrids(grids);
-            // なんで縦線が一瞬出て消えるのかな…？
+        chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
+        chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
+        chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
+        chart.xgrids.remove();
+        // なんで縦線が一瞬出て消えるのかな…？
     }
+    setTimeout(() => {
+        for (chart of charts) {
+            for (let op of dataOp) {
+                chart.xgrids.add([{value: parseFloat(op["x"]), text: (op["opType"] + "=" + op["opValue"])}])
+            }
+            chart.flush();
+        }}, GRAPH_ANIME_TIME + 10)
 }
 
 function* zip(...iterables) {
