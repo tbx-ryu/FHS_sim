@@ -463,10 +463,10 @@ function urlToParams() {
     
     // set params from array
     $("#musicTitle").attr("value", title)
-    for (let rowBPM of arrBPM.slice(0, -1)) { // グラフ描画用にx=100があるため，スキップ
+    for (let rowBPM of arrBPM) {
         $("#bpmTable").find("tbody tr:last-child input[name='barNum']").val(rowBPM["x"]);
         $("#bpmTable").find("tbody tr:last-child input[name='BPM']").val(rowBPM["bpm"]);
-        if ($("#bpmTable").find("tbody tr").length < arrBPM.length - 1) {
+        if ($("#bpmTable").find("tbody tr").length < arrBPM.length) {
             $("#bpmTable").find("tbody tr:last-child").clone(true).appendTo($("#bpmTable").find("tbody"));
         }
     }
@@ -474,7 +474,7 @@ function urlToParams() {
         $("#operationTable").find("tbody tr:last-child input[name='barNum']").val(rowOP["x"]);
         $("#operationTable").find("tbody tr:last-child select[name='opType']").val(replaceStrings(rowOP["opType"], reverse=true));
         $("#operationTable").find("tbody tr:last-child input[name='operationValue']").val(rowOP["opValue"]);
-        if ($("#operationTable").find("tbody tr").length < arrOP.length - 1) {
+        if ($("#operationTable").find("tbody tr").length < arrOP.length) {
             $("#operationTable").find("tbody tr:last-child").clone(true).appendTo($("#operationTable").find("tbody"));
         }
     }
@@ -518,7 +518,7 @@ function paramsToUrl() {
     queryObj["title"] = document.getElementById("musicTitle").value;
     // bpm
     queryObj["bpmkey"] = Object.keys(dataBPMChange[0]).join("-");
-    queryObj["bpm"] = dataBPMChange.map((bar) => Object.values(bar).join("s")).join("r");
+    queryObj["bpm"] = dataBPMChange.slice(0,-1).map((bar) => Object.values(bar).join("s")).join("r"); // グラフ描画用のデータを削除
     // operation
     queryObj["opkey"] = Object.keys(dataHSChange[0]).join("-");
     queryObj["op"] = dataHSChange.map((bar) => Object.values(bar).join("s")).join("r");
