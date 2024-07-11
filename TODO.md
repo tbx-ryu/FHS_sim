@@ -13,7 +13,7 @@
  - [x] タイトルおよび説明文の追加
  - [ ] 使い方説明ページの作成
  - [x] [IPAのセキュリティ](https://www.ipa.go.jp/security/vuln/websecurity/about.html)対策フォロー
- - [ ] テンプレート準備
+ - [x] テンプレート準備
  - [ ] LIFTのみのSUD付け挙動修正
  - [ ] ターンテーブル-の挙動修正
 
