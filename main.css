@@ -102,6 +102,12 @@ body {
 	width: 60px;
 	min-width: 50px;
 }
+.textMemo{
+	width: 100%;
+}
+.textReadOnly{
+	background-color:transparent;
+}
 .smallNotes{
 	font-size: 0.7em;
 }
@@ -212,11 +218,11 @@ table th,table td{
 	min-width: 30px;
 }
 .operationCol {
-	width: 60%;
+	width: 45%;
 	min-width: 210px;
 }
 .memoCol {
-	width: 25%;
+	width: 40%;
 }
 @media (1000px <= width) {
 	body {

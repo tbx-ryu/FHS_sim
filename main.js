@@ -59,7 +59,7 @@ function getHSdataset(arrBPM, getRaw=false) {
                      opValue: row.cells["operation"].children["operationValue"].value}
         if(calcTiming(barNum, notesType, beatNum) > 0) {
             rowAdd = calcOperation(calcTiming(barNum, notesType, beatNum), arrHS[rowNum-1], arrBPM, operation);
-            row.cells["memo"].children["memoVal"].placeholder = rowAdd["memo"]
+            row.cells["memo"].children["memoVal"].value = rowAdd["memo"]
             arrHS.push(rowAdd);
             if (getRaw) {
                 operation["x"] = calcTiming(barNum, notesType, beatNum);

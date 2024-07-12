@@ -35,7 +35,10 @@
                 <div class="postIt info">
                     <h4>曲情報</h4>
                     <p><input type="text" placeholder="曲タイトル" id="musicTitle" class="infoTitle"></p>
-                    <div class=flexWrap><button id="genUrl" class="genUrlButton">URL生成</button><input type="text" placeholder="URL" id="generatedUrl" class="infoUrl"></div>
+                    <div class=flexWrap>
+                        <button id="genUrl" class="genUrlButton">URL生成</button>
+                        <input type="url" placeholder="URL" id="generatedUrl" class="infoUrl textReadOnly" readonly="readonly" onclick="this.select()">
+                    </div>
                 </div>
                 <div class="postIt bpm">
                     <h4>BPM変化</h4>
@@ -153,7 +156,7 @@
                                         <span class="smallNotes" name="textSarachon">(皿チョン)</span>
                                     </td>
                                     <!-- 備考欄 -->
-                                    <td name="memo"><input type="text" name="memoVal"></td>
+                                    <td name="memo"><input type="text" name="memoVal" readonly="readonly" class="textMemo textReadOnly"></td>
                                     <!-- マイナスボタンの画像 -->
                                     <td class="MinusBtn"><img src="img/rawMinus.png"></td>
                                 </tr>
