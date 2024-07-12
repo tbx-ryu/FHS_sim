@@ -1,4 +1,6 @@
 var GRAPH_ANIME_TIME = 50; // msec
+var SUD_MIN = 43;
+var LIFT_MIN = 43;
 
 function getDatasets() {
     let arrBPM = getBPMdataset();
@@ -210,9 +212,17 @@ function generateMemo(params, preVals, curVals) {
     let memoArr = [];
     let param, preVal, curVal;
     for ([param, preVal, curVal] of zip(params, preVals, curVals)) {
-        memoArr.push(`${param}\u003A [${preVal} => ${curVal}]`);
+        memoArr.push(`${param}\u003A [${formatStr(preVal)}→${formatStr(curVal)}]`);
     }
     return memoArr.join(",");
+}
+
+function formatStr (str) {
+    str = String(str);
+    if (str.includes(".")) {
+        str = str.split(".")[0] + "." + str.split(".")[1].slice(0,2);
+    };
+    return str;
 }
 
 function hsFix(hs) {
@@ -307,17 +317,11 @@ function updateCharts(charts, useDatasets) {
             types: {
                 [useDataset.yAxisKey]: "step"
             },
-            grids :{
-                x: {
-                    lines: [{value: 20, text: "hoge"}]
-                }
-            }
         })
         chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
         chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
         chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
         chart.xgrids.remove();
-        // なんで縦線が一瞬出て消えるのかな…？
     }
     setTimeout(() => {
         for (chart of charts) {
@@ -488,11 +492,11 @@ function urlToParams() {
     if (rowInit["hasSud"] == "te") {
         $("#initTable").find("#hasSud").prop("checked", true);
     }
-    $("#initTable").find("#opSud").val(rowInit["sud"]);
+    $("#initTable").find("#opSud").val(Math.max(parseInt(rowInit["sud"]), SUD_MIN));
     if (rowInit["hasLift"] == "te") {
         $("#initTable").find("#hasLift").prop("checked", true);
     }
-    $("#initTable").find("#opLift").val(rowInit["lift"]);
+    $("#initTable").find("#opLift").val(Math.max(parseInt(rowInit["lift"]), LIFT_MIN));
     // {isFHS: isFHS, midori: midori, hs: hs, hasSud: hasSud, hasLift: hasLift, hasHid: hasHid, sud: sud, lift: lift, hid: hid}
 }
 
