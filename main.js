@@ -135,8 +135,32 @@ function getInitialSetting(iniBPM, getRaw=false) {
     }
 }
 
+function validateValue(arr) {
+    errStr = "";
+    const ranges = [
+        {key: "midori", min: 1, max: "", cond: true},
+        {key: "sud", min: 43, max: 1000, cond: arr["hasSud"]},
+        {key: "lift", min: 43, max: 1000, cond: arr["hasLift"]},
+        {key: "hs", min: 0.01, max: "", cond: true}];
+    for (let range of ranges) {
+        if (range.min != "") {
+            if (arr[range.key] < range.min && range.cond) {
+                arr[range.key] = range.min;
+                errStr += "下限";
+            }
+        }
+        if (range.max != "") {
+            if (range.max < arr[range.key] && range.cond) {
+                arr[range.key] = range.max;
+                errStr += "上限";
+            }
+        }
+    }
+    return arr, errStr;
+}
+
 function calcOperation(x, prevArr, arrBPM, op) {
-    let memo;
+    let memo = "", limitStr = "";
     let bpm = x==1 ? arrBPM[0]["bpm"] : arrBPM.findLast(function (bpmInfo) {
                         return bpmInfo["x"] <= x; 
                         })["bpm"];
@@ -146,14 +170,16 @@ function calcOperation(x, prevArr, arrBPM, op) {
         // 黒鍵盤と白鍵盤
         let hsChangeVal = (op["hsType"] == "table_fhs" && curArr["hasSud"]) ? 0.5 * parseInt(op["opValue"]) : 0.25 * parseInt(op["opValue"]);
         curArr["hs"] = op["opType"] == "hs_down" ? curArr["hs"] - hsChangeVal : curArr["hs"] + hsChangeVal;
+        curArr, limitStr = validateValue(curArr);
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
-        memo = generateMemo(["HS"], [prevArr["hs"]], [curArr["hs"]]);
+        memo = generateMemo(["HS"+limitStr], [prevArr["hs"]], [curArr["hs"]]);
     } else if (op["opType"] == "sud_off") {
         // サドプラ外し
         curArr["hasSud"] = false;
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
         memo = generateMemo(["sud"], [prevArr["sud"]], [0]);
     } else if (op["opType"] == "sud_on") {
+        // サドプラ付け
         curArr["sudInit"] = true;
         curArr["hasSud"] = true;
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
@@ -163,32 +189,38 @@ function calcOperation(x, prevArr, arrBPM, op) {
         if (op["hsType"] == "table_fhs") {
             if (curArr["hasSud"] == true) {
                 curArr["sud"] += parseInt(op["opValue"]);
+                curArr, limitStr = validateValue(curArr);
                 curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 curArr["midori"] = curArr["memMidori"];
-                memo = generateMemo(["sud", "HS"], [prevArr["sud"], prevArr["hs"]], [curArr["sud"], curArr["hs"]]);
+                memo = generateMemo(["sud"+limitStr, "HS"], [prevArr["sud"], prevArr["hs"]], [curArr["sud"], curArr["hs"]]);
             } else if (curArr["hasLift"] == true && curArr["sudInit"] == false) {
                 curArr["lift"] += parseInt(op["opValue"]);
+                curArr, limitStr = validateValue(curArr);
                 curArr["hs"] = calcMidori2HS(curArr["memMidori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
                 curArr["midori"] = curArr["memMidori"];
-                memo = generateMemo(["Lift", "HS"], [prevArr["lift"], prevArr["hs"]], [curArr["lift"], curArr["hs"]]);
+                memo = generateMemo(["Lift"+limitStr, "HS"], [prevArr["lift"], prevArr["hs"]], [curArr["lift"], curArr["hs"]]);
             } else if (curArr["sudInit"] == true) {
                 curArr["lift"] += parseInt(op["opValue"]);
+                curArr, limitStr = validateValue(curArr);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
-                memo = generateMemo(["Lift", "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
+                memo = generateMemo(["Lift"+limitStr, "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
             } else {
                 curArr["hs"] += parseFloat(op["opValue"]);
+                curArr, limitStr = validateValue(curArr);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
-                memo = generateMemo(["HS", "緑数字"], [prevArr["hs"], prevArr["midori"]], [curArr["hs"], curArr["midori"]]);
+                memo = generateMemo(["HS"+limitStr, "緑数字"], [prevArr["hs"], prevArr["midori"]], [curArr["hs"], curArr["midori"]]);
             }
         } else {
             if (curArr["hasSud"] == true) {
                 curArr["sud"] += parseInt(op["opValue"]);
+                curArr, limitStr = validateValue(curArr);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
-                memo = generateMemo(["sud", "緑数字"], [prevArr["sud"], prevArr["midori"]], [curArr["sud"], curArr["midori"]]);
+                memo = generateMemo(["sud"+limitStr, "緑数字"], [prevArr["sud"], prevArr["midori"]], [curArr["sud"], curArr["midori"]]);
             } else if (curArr["hasLift"] == true) {
                 curArr["lift"] += parseInt(op["opValue"]);
+                curArr, limitStr = validateValue(curArr);
                 curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
-                memo = generateMemo(["Lift", "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
+                memo = generateMemo(["Lift"+limitStr, "緑数字"], [prevArr["lift"], prevArr["midori"]], [curArr["lift"], curArr["midori"]]);
             } else {
                 console.log("nani mo nai");
                 memo = "No Changes";
@@ -200,6 +232,7 @@ function calcOperation(x, prevArr, arrBPM, op) {
             memo = generateMemo(["HS種別"], ["CHS"], ["FHS"]);
         } else {
             curArr["hs"] = hsFix(parseFloat(curArr["hs"]));
+            curArr, _ = validateValue(curArr);
             curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
             memo = generateMemo(["HS種別", "緑数字", "HS"], ["FHS", prevArr["midori"], prevArr["hs"]], ["CHS", curArr["midori"], curArr["hs"]]);
         }
@@ -353,14 +386,17 @@ function checkOperations() {
     // const textSarachon = document.getElementById("textSarachon");
     // const operationValue = document.getElementById("operationValue")
     let isFHS = document.getElementsByName('isFHS')[0].checked;
-    let sudInit = document.getElementById('hasSud').checked;
-    let cell, opType, hasSud, hasLift;
+    let cell;
     const wSarachon = ["sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
     const wOperationValue = ["hs_down", "hs_up", "sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
     for (let i=1; i<tbl.rows.length; i++) {
         cell = tbl.rows[i].cells["operation"]
         if (cell.children["opType"].value == "hstype_change") {
             isFHS = !isFHS
+        } else if (cell.children["opType"].value == "turntable") {
+            cell.children["operationValue"].setAttribute("min", -1000);
+        } else {
+            cell.children["operationValue"].setAttribute("min", 0);
         }
         if (isFHS){
             tbl.rows[i].className = "table_fhs";
@@ -383,12 +419,11 @@ function checkOperations() {
 }
 
 function sortTable(tableId) {
-    let i, nRow, nCol, oldTds;
+    let nRow;
     let oldTable = document.getElementById(tableId);
     let oldTbody = oldTable.getElementsByTagName("tbody")[0];
     let oldTrs = oldTbody.getElementsByTagName("tr")
     let newIdxs = new Array();
-    let cellVals = new Array();
 
     for (nRow = 0; nRow < oldTrs.length; nRow++) { // skip footer (img of +)
         barNum = parseFloat(oldTable.rows[nRow+1].cells["barInfo"].children["barNum"].value);
@@ -550,15 +585,12 @@ function replaceStrings(myStr, reverse=false) {
     return myStr;    
 }
 
-function validateInputValue() {
-
-}
-
 // jQuery
 $(function(){
     // プラスボタンクリック時
     $(".PlusBtn").on('click',function(){
         $(this).parent().find("table tbody tr:last-child").clone(true).appendTo($(this).parent().find("table tbody"));
+        $(this).parent().find("table tbody tr:last-child").find("input[name='operationValue']").val(0);
         let newSelect, oldSelect;
         for (let nSelect=0; nSelect<$(this).parent().find("table tbody tr:last-child").find("select").length; nSelect++) {
             newSelect = $(this).parent().find("table tbody tr:last-child").find("select")[nSelect]
