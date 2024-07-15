@@ -149,10 +149,10 @@ body {
 	scrollbar-width: thin;
 }
 .table_fhs{
-	background-color: rgb(231, 247, 253);
+	background-color: #e7f7fd;
 }
 .table_chs{
-	background-color: rgb(255, 238, 218);
+	background-color: #ffeeda;
 }
 .initSettingBg
 {
