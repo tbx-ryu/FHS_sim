@@ -245,9 +245,9 @@ function generateMemo(params, preVals, curVals) {
     let memoArr = [];
     let param, preVal, curVal;
     for ([param, preVal, curVal] of zip(params, preVals, curVals)) {
-        memoArr.push(`${param}\u003A [${formatStr(preVal)}→${formatStr(curVal)}]`);
+        memoArr.push(`${param}\u003A(${formatStr(preVal)}→${formatStr(curVal)})`);
     }
-    return memoArr.join(",");
+    return memoArr.join(", ");
 }
 
 function formatStr (str) {
@@ -385,6 +385,8 @@ function checkOperations() {
     const tbl = document.getElementById("operationTable");
     // const textSarachon = document.getElementById("textSarachon");
     // const operationValue = document.getElementById("operationValue")
+    let hasSud = document.getElementById("hasSud").checked;
+    let sarachonTarget = hasSud ? "sud" : "lift";
     let isFHS = document.getElementsByName('isFHS')[0].checked;
     let cell;
     const wSarachon = ["sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
@@ -393,6 +395,10 @@ function checkOperations() {
         cell = tbl.rows[i].cells["operation"]
         if (cell.children["opType"].value == "hstype_change") {
             isFHS = !isFHS
+        } else if (cell.children["opType"].value == "sud_off") {
+            hasSud = false;
+        } else if (cell.children["opType"].value == "sud_on") {
+            hasSud = true;
         } else if (cell.children["opType"].value == "turntable") {
             cell.children["operationValue"].setAttribute("min", -1000);
         } else {
@@ -400,7 +406,10 @@ function checkOperations() {
         }
         if (isFHS){
             tbl.rows[i].className = "table_fhs";
-            if (wSarachon.includes(cell.children["opType"].value)) {
+            if (wSarachon.includes(cell.children["opType"].value)
+                 && 
+                (hasSud || (!hasSud && sarachonTarget == "lift"))
+               ) {
                 cell.children["textSarachon"].hidden = false;
             } else {
                 cell.children["textSarachon"].hidden = true;
