@@ -1,6 +1,7 @@
 var GRAPH_ANIME_TIME = 50; // msec
 var SUD_MIN = 43;
 var LIFT_MIN = 43;
+var MID_SUD_VAL = 100;
 
 function getDatasets() {
     let arrBPM = getBPMdataset();
@@ -110,11 +111,11 @@ function getInitialSetting(iniBPM, getRaw=false) {
             hs = hsFix(parseFloat(document.getElementById('opHS').value));
             document.getElementById("opHS").value = hs.toFixed(2);
         }
-        [sud, lift, hid] = [0, 0, 0];
+        [sud, lift, hid] = [MID_SUD_VAL, 0, 0];
         midori = calcHS2Midori(hs=hs, sud=sud, lift=lift, hid=hid, hasSud=hasSud, hasLift=hasLift, bpm=iniBPM);
         document.getElementById('opMidori').value = parseInt(midori);
     } else {
-        sud = hasSud? parseInt(document.getElementById('opSud').value) : 0;
+        sud = hasSud? parseInt(document.getElementById('opSud').value) : MID_SUD_VAL;
         lift = hasLift? parseInt(document.getElementById('opLift').value) : 0;
         hid = hasHid? parseInt(document.getElementById('opHid').value) : 0;
         if(isFHS) {
@@ -180,10 +181,16 @@ function calcOperation(x, prevArr, arrBPM, op) {
         memo = generateMemo(["sud"], [prevArr["sud"]], [0]);
     } else if (op["opType"] == "sud_on") {
         // サドプラ付け
-        curArr["sudInit"] = true;
         curArr["hasSud"] = true;
-        curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
-        memo = generateMemo(["sud"], [0], [curArr["sud"]]);
+        if (!curArr["sudInit"] && op["hsType"] == "table_fhs") {
+            // ここ緑に合わせてHSが変わる？SUDの白数字が変わる？
+            curArr["hs"] = calcMidori2HS(curArr["midori"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+            curArr["sudInit"] = true;
+            memo = generateMemo(["sud", "HS"], [0, prevArr["hs"]], [curArr["sud"], curArr["hs"]]);
+        } else {
+            curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
+            memo = generateMemo(["sud", "緑数字"], [0, prevArr["midori"]], [curArr["sud"], curArr["midori"]]);
+        }
     } else if (op["opType"] == "turntable"){
         // 皿回したとき
         if (op["hsType"] == "table_fhs") {
@@ -358,8 +365,10 @@ function updateCharts(charts, useDatasets) {
     }
     setTimeout(() => {
         for (chart of charts) {
+            let opText;
             for (let op of dataOp) {
-                chart.xgrids.add([{value: parseFloat(op["x"]), text: (op["opType"] + "=" + op["opValue"])}])
+                opText = "sud_off, sud_on, hstype_change".includes(op["opType"]) ? op["opType"] : op["opType"] + "=" + op["opValue"];
+                chart.xgrids.add([{value: parseFloat(op["x"]), text: opText}])
             }
             chart.flush();
         }}, GRAPH_ANIME_TIME + 10)
@@ -393,23 +402,37 @@ function checkOperations() {
     const wOperationValue = ["hs_down", "hs_up", "sud_up", "sud_down", "lift_up", "lift_down", "turntable"];
     for (let i=1; i<tbl.rows.length; i++) {
         cell = tbl.rows[i].cells["operation"]
+        // sud_on / sud_off check
+        if (hasSud) {
+            cell.children["opType"].children["sud_on"].disabled = true;
+            cell.children["opType"].children["sud_off"].disabled = false;
+            if (cell.children["opType"].value == "sud_on") {
+                cell.children["opType"].value = "sud_off";
+            }
+        } else {
+            cell.children["opType"].children["sud_off"].disabled = true;
+            cell.children["opType"].children["sud_on"].disabled = false;
+            if (cell.children["opType"].value == "sud_off") {
+                cell.children["opType"].value = "sud_on";
+            }
+        }
+        // hstype & sarachon & value range check
         if (cell.children["opType"].value == "hstype_change") {
             isFHS = !isFHS
         } else if (cell.children["opType"].value == "sud_off") {
             hasSud = false;
         } else if (cell.children["opType"].value == "sud_on") {
             hasSud = true;
+            sarachonTarget = "sud";
         } else if (cell.children["opType"].value == "turntable") {
             cell.children["operationValue"].setAttribute("min", -1000);
         } else {
             cell.children["operationValue"].setAttribute("min", 0);
         }
+        // coloring & formating column
         if (isFHS){
             tbl.rows[i].className = "table_fhs";
-            if (wSarachon.includes(cell.children["opType"].value)
-                 && 
-                (hasSud || (!hasSud && sarachonTarget == "lift"))
-               ) {
+            if (wSarachon.includes(cell.children["opType"].value) && (hasSud || (!hasSud && sarachonTarget == "lift"))) {
                 cell.children["textSarachon"].hidden = false;
             } else {
                 cell.children["textSarachon"].hidden = true;
