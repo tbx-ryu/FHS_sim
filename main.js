@@ -169,7 +169,7 @@ function calcOperation(x, prevArr, arrBPM, op) {
     curArr["x"] = x;
     if (op["opType"] == "hs_down" || op["opType"] == "hs_up") {
         // 黒鍵盤と白鍵盤
-        let hsChangeVal = (op["hsType"] == "table_fhs" && curArr["hasSud"]) ? 0.5 * parseInt(op["opValue"]) : 0.25 * parseInt(op["opValue"]);
+        let hsChangeVal = (op["hsType"] == "table_fhs" && (curArr["hasSud"] || curArr["hasLift"])) ? 0.5 * parseInt(op["opValue"]) : 0.25 * parseInt(op["opValue"]);
         curArr["hs"] = op["opType"] == "hs_down" ? curArr["hs"] - hsChangeVal : curArr["hs"] + hsChangeVal;
         curArr, limitStr = validateValue(curArr);
         curArr["midori"] = calcHS2Midori(curArr["hs"], curArr["sud"], curArr["lift"], curArr["hid"], curArr["hasSud"], curArr["hasLift"], bpm);
