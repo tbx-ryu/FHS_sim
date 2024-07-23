@@ -512,7 +512,7 @@ function updateDatasetSetting(useDataset, padding=10) {
     useDataset["xmin"] = 1; // start ha itsumo 1
     useDataset["xmax"] = Math.max(parseInt(BPMdataset.slice(-1)[0]["x"]), parseInt(HSdataset.slice(-1)[0]["x"]));
     useDataset["ymin"] = parseInt(datasets[0][axKey]) - padding;
-    useDataset["ymax"] = parseInt(datasets[0][axKey]) + padding ;
+    useDataset["ymax"] = parseInt(datasets[0][axKey]) + padding;
     for (data of datasets) {
         useDataset["xmin"] = xminU == "" ? Math.min(useDataset["xmin"], data["x"]) : parseInt(xminU);
         useDataset["xmax"] = xmaxU == "" ? Math.max(useDataset["xmax"], data["x"]) : parseInt(xmaxU);

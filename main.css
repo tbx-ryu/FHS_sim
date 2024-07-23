@@ -168,8 +168,12 @@ body {
 .initSetting {
 	width: 300px;
 }
-.initSetting td {
+.initSetting td, .graphSetting td {
 	padding: 0;
+}
+.graphSettingLabel {
+	display: inline-block;
+	width: 170px;
 }
 .table-arr{
 	width: 100%;

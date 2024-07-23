@@ -181,13 +181,11 @@
                 <div class="postIt graphArea">
                     <h4>グラフおよびグラフ設定</h4>
                     <div class="initSettingBg">
-                        <table class="initSetting", id="graphSetting">
+                        <table class="graphSetting" id="graphSetting">
                             <tbody>
                                 <tr>
                                     <td>
-                                        X軸（小節数）範囲 : 
-                                    </td>
-                                    <td>
+                                        <label class="graphSettingLabel">軸（小節数）範囲 : </label>
                                         <input type="number" value="" placeholder="下限" id="xmin" class="textValue" min="1">
                                         ~
                                         <input type="number" value="" placeholder="上限" id="xmax" class="textValue" min="1">
@@ -195,9 +193,7 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        Y軸（BPM）範囲 : 
-                                    </td>
-                                    <td>
+                                        <label class="graphSettingLabel">Y軸（BPM）範囲 : </label>
                                         <input type="number" value="" placeholder="下限" id="bpmmin" class="textValue">
                                         ~
                                         <input type="number" value="" placeholder="上限" id="bpmmax" class="textValue">
@@ -205,12 +201,19 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        Y軸（緑数字）範囲 : 
-                                    </td>
-                                    <td>
+                                        <label class="graphSettingLabel">Y軸（緑数字）範囲 : </label>
                                         <input type="number" value="" placeholder="下限" id="midorimin" class="textValue">
                                         ~
                                         <input type="number" value="" placeholder="上限" id="midorimax" class="textValue">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <label class="graphSettingLabel">表示するグラフ : </label>
+                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="bpm" checked disabled="disabled"/> BPM</label>
+                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" valu="speed" checked disabled="disabled"/> 緑数字</label>
+                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="sudlift" /> sud&Lift</label>
+                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="hs" /> ハイスピード </label>
                                     </td>
                                 </tr>
                         </table>
