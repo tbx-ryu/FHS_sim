@@ -161,6 +161,7 @@ function validateValue(arr) {
 }
 
 function calcOperation(x, prevArr, arrBPM, op) {
+    // TODO: Sud外しでSuddenを０にする（memSudの追加？）
     let memo = "", limitStr = "";
     let bpm = x==1 ? arrBPM[0]["bpm"] : arrBPM.findLast(function (bpmInfo) {
                         return bpmInfo["x"] <= x; 
@@ -384,7 +385,7 @@ function updateCharts() {
     let dataOp = getHSdataset(dataBPMChange, getRaw=true);
     for (let [axKey, chartSetting] of Object.entries(chartSettings)) {
         if (axKey == "sudlift") {
-            jsondata = chartSetting["datasets"].map((x) => {x["sud"] = parseInt(x["sud"])*(-1); return x});
+            jsondata = chartSetting["datasets"].map((x) => {x["sud"] = x["hasSud"] ? parseInt(x["sud"])*(-1): 0; return x});
             valueKeys = ["sud", "lift"]
             chartTypes = {"sud": "area-step", "lift": "area-step"} // TODO SUDの値を-1000する，y2軸の設定，drawの改修
         } else {
@@ -434,8 +435,6 @@ function* zip(...iterables) {
 // HS操作に更新があった際，各タイミングでFHSかCHSかなど確認する
 function checkOperations() {
     const tbl = document.getElementById("operationTable");
-    // const textSarachon = document.getElementById("textSarachon");
-    // const operationValue = document.getElementById("operationValue")
     let hasSud = document.getElementById("hasSud").checked;
     let sarachonTarget = hasSud ? "sud" : "lift";
     let isFHS = document.getElementsByName('isFHS')[0].checked;
@@ -668,6 +667,15 @@ function replaceStrings(myStr, reverse=false) {
     return myStr;    
 }
 
+function switchDisplayGraph() {
+    let dispGraphs = document.getElementsByName("dispGraph");
+    let graphBg;
+    for (dispGraph of dispGraphs) {
+        graphBg = document.getElementById(dispGraph.value);
+        graphBg.style.display = dispGraph.checked ? "" : "none"
+    }
+}
+
 // jQuery
 $(function(){
     // プラスボタンクリック時
@@ -774,6 +782,7 @@ midoriChart = drawChart(dataHSChange, canvasID="midori");
 sudliftChart = drawChart(dataHSChange, canvasID="sudlift");
 hsChart = drawChart(dataHSChange, cnavasID="hs");
 updateCharts();
+switchDisplayGraph();
 bpmTable.addEventListener(
     "change",
     function () {
@@ -798,5 +807,6 @@ initTable.addEventListener(
 graphSettingTable.addEventListener(
     "change",
     function() {
-        updateCharts();}
+        updateCharts();
+        switchDisplayGraph();}
     );
