@@ -282,21 +282,36 @@ function calcMidori2HS(midori, sud, lift, hid, hasSud, hasLift, bpm, baseMidori=
     return (baseMidori/(bpm*midori)*(1-(sud+hid+lift)/1000))/2 // diveded by 2 because Lightning Model
 }
 
-function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
+function drawChart(datasets, canvasID) {
+    let graphRange = getGraphRange(canvasID, datasets);
+    let jsondata, valueKeys, chartTypes, colors, axes;
+    const colorPalet = {"bpm":"#ea5550", "midori":"#37a34a", "sud": "#555555", "lift": "#555555", "hs": "#999999"};
+    const labelPalet = {"bpm": "BPM", "midori": "緑数字", "sudlift": "Lift / Sudden+", "hs": "ハイスピード"};
+    if (canvasID == "sudlift") {
+        jsondata = datasets.map((x) => {x["sud"] = parseInt(x["sud"])*(-1); return x});
+        valueKeys = ["sud", "lift"];
+        chartTypes = {"sud": "area-step", "lift": "area-step"};
+        colors = {"sud": colorPalet["sud"], "lift": colorPalet["lift"]};
+        axes = {sud: "y2", lift: "y"};
+    } else {
+        jsondata = datasets;
+        valueKeys = [canvasID];
+        chartTypes = {[canvasID]: "step"};
+        colors = {[canvasID]: [colorPalet[canvasID]]};
+        axes = {[canvasID]: "y"};
+    }
     let chart = c3.generate({
+        padding: {left: 45},
         bindto: document.getElementById(canvasID),
         data: {
-            json: datasets,
+            json: jsondata,
             keys: {
                 x: "x",
-                value: [useDataset.yAxisKey],
+                value: valueKeys,
             },
-            colors: {
-                [useDataset.yAxisKey]: [useDataset.color],
-            },
-            types: {
-                [useDataset.yAxisKey]: "step"
-            },
+            colors: colors,
+            types: chartTypes,
+            axes: axes,
         },
         line: {
             step: {
@@ -314,7 +329,7 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                     right: 5,
                 },
                 tick: {
-                    values: range(0, (Math.ceil(useDataset["xmax"] / 10) + 1) * 10),
+                    values: range(0, (Math.ceil(graphRange["xmax"] / 10) + 1) * 10),
                     format: d3.format(".0f")
                 },
                 label: {
@@ -322,18 +337,26 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
                 }
             },
             y: {
-                min: useDataset["ymin"],
-                max: useDataset["ymax"],
+                min: graphRange["ymin"],
+                max: graphRange["ymax"],
                 padding: {
                     bottom: 0,
                     top: 10,
                 },
                 tick: {
-                    format: d3.format(".0f"),
+                    format: d3.format(" 4"),
                 },
                 label: {
-                    text: useDataset["label"],
+                    text: labelPalet[canvasID],
                 }
+            },
+            y2: {
+                min: -1000,
+                max: 0,
+                padding: {
+                    bottom: 0,
+                    top: 10,
+                },
             }
         },
         transition: {
@@ -343,35 +366,54 @@ function drawChart(datasets, canvasID="bpm", useDataset, update=false) {
     return chart;
 }
 
-function updateCharts(charts, useDatasets) {
-    let chart, useDataset, datasets, dataBPMChange, dataHSChange;
+function updateCharts() {
+    let dataBPMChange, dataHSChange;
     [dataBPMChange, dataHSChange] = getDatasets();
+    chartSettings = {
+        "bpm": {"chart": bpmChart, "datasets": dataBPMChange, "graphRange": {}},
+        "midori": {"chart": midoriChart, "datasets": dataHSChange, "graphRange": {}},
+        "sudlift": {"chart": sudliftChart, "datasets": dataHSChange, "graphRange": {}},
+        "hs": {"chart": hsChart, "datasets": dataHSChange, "graphRange": {}},
+    };
+    chartSettings["bpm"]["graphRange"] = getGraphRange("bpm", dataBPMChange);
+    chartSettings["midori"]["graphRange"] = getGraphRange("midori", dataHSChange);
+    chartSettings["sudlift"]["graphRange"] = {"xmin": chartSettings["midori"]["graphRange"]["xmin"], "xmax": chartSettings["midori"]["graphRange"]["xmax"], "ymax": 1000, "ymin": 0};
+    chartSettings["hs"]["graphRange"] = {"xmin": chartSettings["midori"]["graphRange"]["xmin"], "xmax": chartSettings["midori"]["graphRange"]["xmax"], "ymax": 10, "ymin": 0};
+
+    let jsondata, valueKeys;
     let dataOp = getHSdataset(dataBPMChange, getRaw=true);
-    for ([chart, useDataset, datasets] of zip(charts, useDatasets, [dataBPMChange, dataHSChange])) {
-        chart.load({
-            json: datasets,
+    for (let [axKey, chartSetting] of Object.entries(chartSettings)) {
+        if (axKey == "sudlift") {
+            jsondata = chartSetting["datasets"].map((x) => {x["sud"] = parseInt(x["sud"])*(-1); return x});
+            valueKeys = ["sud", "lift"]
+            chartTypes = {"sud": "area-step", "lift": "area-step"} // TODO SUDの値を-1000する，y2軸の設定，drawの改修
+        } else {
+            jsondata = chartSetting["datasets"];
+            valueKeys = [axKey];
+            chartTypes = {[axKey]: "step"};
+        }
+        chartSetting["chart"].load({
+            json: jsondata,
             keys: {
                 x: "x",
-                value: [useDataset.yAxisKey],
+                value: valueKeys,
             },
-            types: {
-                [useDataset.yAxisKey]: "step"
-            },
+            types: chartTypes,
         })
-        chart.axis.min({x: useDataset["xmin"], y: useDataset["ymin"]});
-        chart.axis.max({x: useDataset["xmax"], y: useDataset["ymax"]});
-        chart.internal.config.axis_x_tick_values = range(0, (Math.ceil(useDataset["xmax"] / 10 + 1) * 10));
-        chart.xgrids.remove();
+        chartSetting["chart"].axis.min({x: chartSetting["graphRange"]["xmin"], y: chartSetting["graphRange"]["ymin"]});
+        chartSetting["chart"].axis.max({x: chartSetting["graphRange"]["xmax"], y: chartSetting["graphRange"]["ymax"]});
+        chartSetting["chart"].internal.config.axis_x_tick_values = range(0, (Math.ceil(chartSetting["graphRange"]["xmax"] / 10 + 1) * 10));
+        chartSetting["chart"].xgrids.remove();
     }
     setTimeout(() => {
-        for (chart of charts) {
+        for (let chartSetting of Object.values(chartSettings)) {
             let opText;
             for (let op of dataOp) {
                 opText = "sud_off, sud_on, hstype_change".includes(op["opType"]) ? op["opType"] : op["opType"] + "=" + op["opValue"];
-                chart.xgrids.add([{value: parseFloat(op["x"]), text: opText}])
+                chartSetting["chart"].xgrids.add([{value: parseFloat(op["x"]), text: opText}])
             }
-            chart.flush();
-        }}, GRAPH_ANIME_TIME + 10)
+            chartSetting["chart"].flush();
+        }}, GRAPH_ANIME_TIME + 50)
 }
 
 function* zip(...iterables) {
@@ -500,28 +542,37 @@ function range(start, stop, step=10) {
     return Array.from({ length: (stop - start) / step + 1}, (_, i) => start + i * step);
 }
 
-function updateDatasetSetting(useDataset, padding=10) {
-    let axKey = useDataset["yAxisKey"];
+function getGraphRange(axKey, datasets, padding=10) { //getGraphRange
+    let graphRange = {};
     let BPMdataset, HSdataset
     [BPMdataset, HSdataset] = getDatasets();
-    let datasets = axKey == "bpm" ? BPMdataset : HSdataset;
+    // let datasets = axKey == "bpm" ? BPMdataset : HSdataset;
     let xminU = document.getElementById("xmin").value;
     let xmaxU = document.getElementById("xmax").value;
-    let yminU = document.getElementById(axKey+"min").value;
-    let ymaxU = document.getElementById(axKey+"max").value;
-    useDataset["xmin"] = 1; // start ha itsumo 1
-    useDataset["xmax"] = Math.max(parseInt(BPMdataset.slice(-1)[0]["x"]), parseInt(HSdataset.slice(-1)[0]["x"]));
-    useDataset["ymin"] = parseInt(datasets[0][axKey]) - padding;
-    useDataset["ymax"] = parseInt(datasets[0][axKey]) + padding;
-    for (data of datasets) {
-        useDataset["xmin"] = xminU == "" ? Math.min(useDataset["xmin"], data["x"]) : parseInt(xminU);
-        useDataset["xmax"] = xmaxU == "" ? Math.max(useDataset["xmax"], data["x"]) : parseInt(xmaxU);
-        useDataset["ymin"] = yminU == "" ? Math.min(useDataset["ymin"], parseInt(data[axKey])-padding) : parseInt(yminU);
-        useDataset["ymax"] = ymaxU == "" ? Math.max(useDataset["ymax"], parseInt(data[axKey])+padding) : parseInt(ymaxU);
+    graphRange["xmin"] = 1; // start ha itsumo 1
+    graphRange["xmax"] = Math.max(parseInt(BPMdataset.slice(-1)[0]["x"]), parseInt(HSdataset.slice(-1)[0]["x"]));
+
+    let yminU = "", ymaxU = "";
+    if (axKey == "sudlift" || axKey == "hs") {
+        graphRange["ymin"] = 0;
+        graphRange["ymax"] = axKey == "sudlift" ? 1000: 10;
+    } else {
+        yminU = document.getElementById(axKey+"min").value;
+        ymaxU = document.getElementById(axKey+"max").value;
+        graphRange["ymin"] = parseInt(datasets[0][axKey]) - padding;
+        graphRange["ymax"] = parseInt(datasets[0][axKey]) + padding;
     }
-    useDataset["xmin"] = useDataset["xmin"] < 1 ? 1 : useDataset["xmin"];
-    useDataset["ymin"] = useDataset["ymin"] < 1 ? 1 : useDataset["ymin"];
-    return useDataset;
+    for (data of datasets) {
+        graphRange["xmin"] = xminU == "" ? Math.min(graphRange["xmin"], data["x"]) : parseInt(xminU);
+        graphRange["xmax"] = xmaxU == "" ? Math.max(graphRange["xmax"], data["x"]) : parseInt(xmaxU);
+        if (axKey != "sudlift" || axKey != "hs") {
+            graphRange["ymin"] = yminU == "" ? Math.min(graphRange["ymin"], parseInt(data[axKey])-padding) : parseInt(yminU);
+            graphRange["ymax"] = ymaxU == "" ? Math.max(graphRange["ymax"], parseInt(data[axKey])+padding) : parseInt(ymaxU);
+        }
+    }
+    graphRange["xmin"] = graphRange["xmin"] < 1 ? 1 : graphRange["xmin"];
+    graphRange["ymin"] = graphRange["ymin"] < 0 ? 0 : graphRange["ymin"];
+    return graphRange;
 }
 
 function urlToParams() {
@@ -632,7 +683,7 @@ $(function(){
         sortTable("operationTable");
         sortTable("bpmTable");
         checkOperations();
-        updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
+        updateCharts();
     });
     // マイナスボタンクリック時
     $(".MinusBtn").on('click',function(){
@@ -642,7 +693,7 @@ $(function(){
             sortTable("operationTable");
             sortTable("bpmTable");
             checkOperations();
-            updateCharts([bpmChart, speedChart], [useDatasetBPM, useDatasetSpeed], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
+            updateCharts();
         }
     });
     $("#genUrl").on("click", paramsToUrl)
@@ -701,10 +752,13 @@ if (window.location.search != "") {
         console.log("Failed to load URL Parameters.");
     }
 }
-// データセット設定の更新
-var useDatasetBPM = updateDatasetSetting({label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400, xmin: 0, xmax: 100});
-var useDatasetSpeed = updateDatasetSetting({label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400, xmin: 0, xmax: 0});
-var bpmChart, speedsChart;
+// データセット設定の更新 → グラフ描画関数に内包
+// var useDatasetBPM = getGraphRange({label: "BPM", yAxisKey: "bpm", color: "#ea5550", ymin: 0, ymax: 400, xmin: 0, xmax: 100});
+// var useDatasetSpeed = getGraphRange({label: "緑数字", yAxisKey: "midori", color: "#37a34a", ymin: 200, ymax: 400, xmin: 0, xmax: 0});
+// var useDatasetSudlift = getGraphRange({label: "Sudden+ & Lift", yAxisKey: ["sud", "lift"], color: "#ea5550", ymin: 0, ymax: 1000, xmin: 0, xmax: 100});
+// var useDatasetHS = getGraphRange({label: "ハイスピード", yAxisKey: "hs", color: "#ea5550", ymin: 0, ymax: 10, xmin: 0, xmax: 100});
+
+var bpmChart, midoriChart, sudliftChart, hsChart;
 const bpmTable = document.getElementById("bpmTable");
 const operationTable = document.getElementById("operationTable");
 const initTable = document.getElementById("initTable");
@@ -715,15 +769,17 @@ let [dataBPMChange, dataHSChange] = getDatasets();
 checkOperations();
 sortTable("operationTable");
 sortTable("bpmTable");
-bpmChart = drawChart(dataBPMChange, canvasID="bpm", useDataset=useDatasetBPM, update=false);
-speedChart = drawChart(dataHSChange, canvasID="speed", useDataset=useDatasetSpeed, update=false);
-updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);
+bpmChart = drawChart(dataBPMChange, canvasID="bpm");
+midoriChart = drawChart(dataHSChange, canvasID="midori");
+sudliftChart = drawChart(dataHSChange, canvasID="sudlift");
+hsChart = drawChart(dataHSChange, cnavasID="hs");
+updateCharts();
 bpmTable.addEventListener(
     "change",
     function () {
         sortTable("operationTable");
         sortTable("bpmTable");
-        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
+        updateCharts();}
     );
 operationTable.addEventListener(
     "change",
@@ -731,16 +787,16 @@ operationTable.addEventListener(
         sortTable("operationTable");
         sortTable("bpmTable");
         checkOperations();
-        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
+        updateCharts();}
     );
 initTable.addEventListener(
     "change",
     function() {
         checkOperations();
-        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
+        updateCharts();}
     );
 graphSettingTable.addEventListener(
     "change",
     function() {
-        updateCharts([bpmChart, speedChart], [updateDatasetSetting(useDatasetBPM), updateDatasetSetting(useDatasetSpeed)]);}
+        updateCharts();}
     );

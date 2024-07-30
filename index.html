@@ -186,6 +186,8 @@
                                 <tr>
                                     <td>
                                         <label class="graphSettingLabel">軸（小節数）範囲 : </label>
+                                    </td>
+                                    <td>
                                         <input type="number" value="" placeholder="下限" id="xmin" class="textValue" min="1">
                                         ~
                                         <input type="number" value="" placeholder="上限" id="xmax" class="textValue" min="1">
@@ -194,6 +196,8 @@
                                 <tr>
                                     <td>
                                         <label class="graphSettingLabel">Y軸（BPM）範囲 : </label>
+                                    </td>
+                                    <td>
                                         <input type="number" value="" placeholder="下限" id="bpmmin" class="textValue">
                                         ~
                                         <input type="number" value="" placeholder="上限" id="bpmmax" class="textValue">
@@ -202,6 +206,8 @@
                                 <tr>
                                     <td>
                                         <label class="graphSettingLabel">Y軸（緑数字）範囲 : </label>
+                                    </td>
+                                    <td>
                                         <input type="number" value="" placeholder="下限" id="midorimin" class="textValue">
                                         ~
                                         <input type="number" value="" placeholder="上限" id="midorimax" class="textValue">
@@ -210,17 +216,21 @@
                                 <tr>
                                     <td>
                                         <label class="graphSettingLabel">表示するグラフ : </label>
-                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="bpm" checked disabled="disabled"/> BPM</label>
-                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" valu="speed" checked disabled="disabled"/> 緑数字</label>
-                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="sudlift" /> sud&Lift</label>
-                                            <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="hs" /> ハイスピード </label>
+                                    </td>
+                                    <td>
+                                        <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="bpm" checked disabled="disabled"/> BPM</label>
+                                        <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" valu="speed" checked disabled="disabled"/> 緑数字</label>
+                                        <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="sudlift" /> sud&Lift</label>
+                                        <label style="padding-right: 10px;"><input type="checkbox" name="dispGraph" value="hs" /> ハイスピード </label>
                                     </td>
                                 </tr>
                         </table>
                     </div>
 
                     <div class="graph" id="bpm"></div>
-                    <div class="graph" id="speed"></div>
+                    <div class="graph" id="midori"></div>
+                    <div class="graph" id="sudlift"></div>
+                    <div class="graph" id="hs"></div>
                 </div>
             </div>
         </div>
