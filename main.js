@@ -253,6 +253,13 @@ function generateMemo(params, preVals, curVals) {
     let memoArr = [];
     let param, preVal, curVal;
     for ([param, preVal, curVal] of zip(params, preVals, curVals)) {
+        if (param == "緑数字") {
+            preVal = preVal.toFixed();
+            curVal = curVal.toFixed();
+        } else if (param == "HS") {
+            preVal = preVal.toFixed(2);
+            curVal = curVal.toFixed(2);
+        }
         memoArr.push(`${param}\u003A(${formatStr(preVal)}→${formatStr(curVal)})`);
     }
     return memoArr.join(", ");
